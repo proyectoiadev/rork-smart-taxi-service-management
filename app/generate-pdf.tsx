@@ -83,7 +83,7 @@ export default function GeneratePDFScreen() {
         <View ref={viewRef} collapsable={false} style={styles.pdfDocument}>
           <View style={styles.pdfPage}>
             <View style={styles.pdfHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <View style={styles.pdfHeaderLogoSection}>
                 <Image 
                   source={{ uri: LOGO_URL }}
                   style={styles.pdfLogo}
@@ -94,9 +94,9 @@ export default function GeneratePDFScreen() {
                   <Text style={styles.pdfSubtitle}>{settings.vehicleId}</Text>
                 </View>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
+              <View style={styles.pdfHeaderRight}>
                 <Text style={styles.pdfMonth}>{MONTH_NAMES[currentMonth]} {new Date().getFullYear()}</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
+                <Text style={styles.pdfHeaderServicesCount}>
                   {services.length} servicios
                 </Text>
               </View>
@@ -444,5 +444,18 @@ const styles = StyleSheet.create({
   pdfTableCell: {
     fontSize: 10,
     color: '#4B5563',
+  },
+  pdfHeaderLogoSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  pdfHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  pdfHeaderServicesCount: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
   },
 });
