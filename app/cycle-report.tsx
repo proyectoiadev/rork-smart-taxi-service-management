@@ -595,7 +595,9 @@ export default function CycleReportScreen() {
             onPress={handleShare}
             disabled={isGenerating || cycleServices.length === 0}
           >
-            <Share2 size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <View style={styles.iconContainer}>
+              <Share2 size={20} color="#FFFFFF" />
+            </View>
             <Text style={styles.buttonPrimaryText}>
               {isGenerating ? 'Generando...' : Platform.OS === 'web' ? 'Descargar HTML' : 'Compartir HTML'}
             </Text>
@@ -765,5 +767,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  iconContainer: {
+    marginRight: 8,
   },
 });
