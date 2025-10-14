@@ -112,7 +112,7 @@ export default function GenerateHTMLScreen() {
           <td style="color: #374151;">${service.company}</td>
           <td style="color: #374151;">${service.origin} → ${service.destination}</td>
           <td style="text-align: right; color: #374151;">${price.toFixed(2)} €</td>
-          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${discountPercent > 0 ? '-' + discountPercent.toFixed(2) + '%' : '-'}</td>
+          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${discountPercent > 0 ? '-' + parseFloat(discountPercent.toFixed(2)).toString() + '%' : '-'}</td>
           <td style="text-align: right; color: #4caf50; font-weight: 700;">${finalPrice.toFixed(2)} €</td>
         </tr>
         ${service.observations ? `
