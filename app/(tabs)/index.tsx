@@ -852,7 +852,7 @@ export default function HomeScreen() {
                       </TouchableOpacity>
                     </View>
                   </View>
-                  <Text style={styles.serviceCardDescription}>{service.origin} → {service.destination}</Text>
+                  <Text style={styles.serviceCardDescription}>{service.origin} {service.origin && service.destination ? '→' : ''} {service.destination}</Text>
                   <Text style={styles.serviceCardCompany}>{service.company}</Text>
                   {service.observations && (
                     <Text style={styles.serviceCardObservations}>{service.observations}</Text>
