@@ -87,7 +87,7 @@ export default function ConfigScreen() {
       const timer = setTimeout(() => {
         setShowRenewalInfoModal(false);
         setShowRenewal(true);
-      }, 20000);
+      }, 10000);
 
       return () => clearTimeout(timer);
     }
@@ -1984,7 +1984,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     width: '100%',
-    maxWidth: 450,
+    maxWidth: 380,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -1994,65 +1994,67 @@ const styles = StyleSheet.create({
   },
   renewalInfoHeader: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
     backgroundColor: '#4CAF50',
   },
   renewalInfoBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   renewalInfoBadgeText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700' as const,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   renewalInfoAmount: {
-    fontSize: 56,
+    fontSize: 48,
     fontWeight: '700' as const,
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   renewalInfoPeriod: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: '500' as const,
   },
   renewalInfoFeaturesSection: {
-    padding: 24,
+    padding: 20,
   },
   renewalInfoSectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700' as const,
     color: '#111827',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   renewalInfoFeature: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 12,
+    gap: 10,
   },
   renewalInfoFeatureText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#374151',
     flex: 1,
+    lineHeight: 20,
   },
   renewalInfoNote: {
     backgroundColor: '#F0FDF4',
-    padding: 20,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
   renewalInfoNoteText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#166534',
     textAlign: 'center',
     fontWeight: '500' as const,
+    lineHeight: 18,
   },
   renewalPricingInfoCard: {
     backgroundColor: '#F9FAFB',
