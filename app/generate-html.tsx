@@ -615,7 +615,7 @@ export default function GenerateHTMLScreen() {
                           styles.cycleButtonStatus,
                           selectedCycle.id === cycle.id && styles.cycleButtonStatusActive,
                         ]}>
-                          {cycle.status === 'open' ? 'Abierto' : 'Cerrado'} • {cycleServices.length} servicios
+                          {cycle.status === 'open' ? 'Abierto' : 'Cerrado'} {cycleServices.length} servicios
                         </Text>
                       </TouchableOpacity>
                     );
