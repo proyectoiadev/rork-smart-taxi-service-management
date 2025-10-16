@@ -67,12 +67,11 @@ export default function CycleReportScreen() {
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
       
-      // ✅ FUNCIÓN PARA FORMATEAR EL DESCUENTO
+      // ✅ FUNCIÓN CORREGIDA PARA FORMATEAR EL DESCUENTO (SIEMPRE CON 2 DECIMALES)
       const formatDiscount = (value) => {
         if (value === 0) return '-';
-        // Elimina ceros innecesarios: 15.00 → 15, pero 15.50 → 15.5
-        const formatted = parseFloat(value.toFixed(2));
-        return `-${formatted}%`;
+        // Siempre muestra 2 decimales: 5 → -5.00%, 5.5 → -5.50%
+        return `-${value.toFixed(2)}%`;
       };
 
       return `
