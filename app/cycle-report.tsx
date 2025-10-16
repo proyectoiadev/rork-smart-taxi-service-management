@@ -66,6 +66,14 @@ export default function CycleReportScreen() {
       const discountPercent = parseFloat(service.discountPercent) || 0;
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
+      
+      // ✅ FUNCIÓN PARA FORMATEAR EL DESCUENTO
+      const formatDiscount = (value) => {
+        if (value === 0) return '-';
+        // Elimina ceros innecesarios: 15.00 → 15, pero 15.50 → 15.5
+        const formatted = parseFloat(value.toFixed(2));
+        return `-${formatted}%`;
+      };
 
       return `
         <tr>
@@ -74,7 +82,7 @@ export default function CycleReportScreen() {
           <td style="color: #374151;">${service.origin} → ${service.destination}</td>
           <td style="color: #374151;">${service.clientName || '-'}</td>
           <td style="text-align: right; color: #374151;">${price.toFixed(2)} €</td>
-          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${discountPercent > 0 ? `-${discountPercent.toFixed(2)}%` : '-'}</td>
+          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${formatDiscount(discountPercent)}</td>
           <td style="text-align: right; color: #4caf50; font-weight: 700;">${finalPrice.toFixed(2)} €</td>
         </tr>
         ${service.observations ? `
