@@ -15,7 +15,7 @@ import {
   Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CreditCard, LogOut, Calendar, Clock, Building2, Plus, X, CheckCircle2, Upload, Download, Info, FileText } from 'lucide-react-native';
+import { CreditCard, LogOut, Calendar, Clock, Building2, Plus, X, CheckCircle2, Upload, Download, Info, FileText, BookOpen, ChevronDown, ChevronUp } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
@@ -34,6 +34,29 @@ interface SubscriptionInfo {
   daysRemaining: number;
 }
 
+interface ManualSectionProps {
+  title: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
+
+const ManualSection: React.FC<ManualSectionProps> = ({ title, expanded, onToggle, children }) => {
+  return (
+    <View style={styles.manualSection}>
+      <TouchableOpacity style={styles.manualSectionHeader} onPress={onToggle}>
+        <Text style={styles.manualSectionTitle}>{title}</Text>
+        {expanded ? <ChevronUp size={20} color="#4CAF50" /> : <ChevronDown size={20} color="#6B7280" />}
+      </TouchableOpacity>
+      {expanded && (
+        <View style={styles.manualSectionContent}>
+          {children}
+        </View>
+      )}
+    </View>
+  );
+};
+
 export default function ConfigScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -51,6 +74,8 @@ export default function ConfigScreen() {
   const [showCloseCycleModal, setShowCloseCycleModal] = useState(false);
   const [closeCycleEndDate, setCloseCycleEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showUserManual, setShowUserManual] = useState(false);
+  const [expandedManualSection, setExpandedManualSection] = useState<string | null>(null);
 
   useEffect(() => {
     loadSubscriptionInfo();
@@ -709,6 +734,194 @@ export default function ConfigScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Manual de Usuario</Text>
+          
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => setShowUserManual(!showUserManual)}
+          >
+            <View style={styles.cardIcon}>
+              <BookOpen size={24} color="#3B82F6" />
+            </View>
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>Guía de Uso</Text>
+              <Text style={styles.cardDescription}>
+                {showUserManual ? 'Ocultar' : 'Ver'} el manual completo de la aplicación
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {showUserManual && (
+            <View style={styles.manualContainer}>
+              <ManualSection 
+                title="1. Introducción" 
+                expanded={expandedManualSection === 'intro'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'intro' ? null : 'intro')}
+              >
+                <Text style={styles.manualText}>Bienvenido a la aplicación de gestión de servicios de taxi. Esta herramienta te permite:</Text>
+                <Text style={styles.manualBullet}>• Registrar servicios con diferentes métodos de pago</Text>
+                <Text style={styles.manualBullet}>• Gestionar clientes abonados y ciclos de facturación</Text>
+                <Text style={styles.manualBullet}>• Generar reportes detallados en PDF, HTML y CSV</Text>
+                <Text style={styles.manualBullet}>• Usar entrada por voz para agilizar el registro</Text>
+                <Text style={styles.manualBullet}>• Mantener copias de seguridad de tus datos</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="2. Registrar Servicios" 
+                expanded={expandedManualSection === 'services'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'services' ? null : 'services')}
+              >
+                <Text style={styles.manualSubtitle}>Métodos de Pago:</Text>
+                <Text style={styles.manualBullet}><Text style={styles.manualBold}>Efectivo/Tarjeta/Amex:</Text> Solo necesitas ingresar el precio del servicio.</Text>
+                <Text style={styles.manualBullet}><Text style={styles.manualBold}>Abonado:</Text> Para clientes corporativos. Requiere un ciclo de facturación activo.</Text>
+                
+                <Text style={styles.manualSubtitle}>Servicios Abonados:</Text>
+                <Text style={styles.manualText}>1. Selecciona Abonado como método de pago</Text>
+                <Text style={styles.manualText}>2. Ingresa el nombre del cliente (empresa)</Text>
+                <Text style={styles.manualText}>3. Completa origen y destino del servicio</Text>
+                <Text style={styles.manualText}>4. El sistema recordará precios y descuentos anteriores</Text>
+                <Text style={styles.manualText}>5. Puedes añadir observaciones si es necesario</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="3. Ciclos de Facturación" 
+                expanded={expandedManualSection === 'cycles'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'cycles' ? null : 'cycles')}
+              >
+                <Text style={styles.manualText}>Los ciclos de facturación son períodos en los que se agrupan los servicios de abonados.</Text>
+                
+                <Text style={styles.manualSubtitle}>Abrir un Ciclo:</Text>
+                <Text style={styles.manualText}>1. Ve a Ajustes → Ciclos de Facturación</Text>
+                <Text style={styles.manualText}>2. Toca Abrir Nuevo Ciclo</Text>
+                <Text style={styles.manualText}>3. Asigna un nombre descriptivo (ej: Ciclo Enero 2025)</Text>
+                <Text style={styles.manualText}>4. Selecciona la fecha de inicio</Text>
+                
+                <Text style={styles.manualSubtitle}>Cerrar un Ciclo:</Text>
+                <Text style={styles.manualText}>1. Solo puedes tener un ciclo activo a la vez</Text>
+                <Text style={styles.manualText}>2. Toca Cerrar Ciclo en el ciclo activo</Text>
+                <Text style={styles.manualText}>3. Selecciona la fecha de cierre</Text>
+                <Text style={styles.manualText}>4. Genera el reporte del ciclo cerrado desde la lista</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="4. Reportes" 
+                expanded={expandedManualSection === 'reports'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'reports' ? null : 'reports')}
+              >
+                <Text style={styles.manualText}>Accede a la pestaña Reportes para generar diferentes tipos de informes:</Text>
+                
+                <Text style={styles.manualSubtitle}>Reporte de Ciclo (PDF):</Text>
+                <Text style={styles.manualBullet}>• Selecciona un ciclo cerrado</Text>
+                <Text style={styles.manualBullet}>• Genera un PDF profesional con todos los servicios</Text>
+                <Text style={styles.manualBullet}>• Incluye totales por cliente y resumen general</Text>
+                <Text style={styles.manualBullet}>• Muestra descuentos con 2 decimales de precisión</Text>
+                
+                <Text style={styles.manualSubtitle}>Exportar CSV:</Text>
+                <Text style={styles.manualBullet}>• Exporta todos los servicios del año</Text>
+                <Text style={styles.manualBullet}>• Compatible con Excel y otras hojas de cálculo</Text>
+                <Text style={styles.manualBullet}>• Incluye todos los detalles de cada servicio</Text>
+                
+                <Text style={styles.manualSubtitle}>Vista HTML:</Text>
+                <Text style={styles.manualBullet}>• Vista previa web de tus reportes</Text>
+                <Text style={styles.manualBullet}>• Puedes compartir o imprimir directamente</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="5. Entrada por Voz" 
+                expanded={expandedManualSection === 'voice'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'voice' ? null : 'voice')}
+              >
+                <Text style={styles.manualText}>Todos los campos de texto tienen un botón de micrófono que te permite dictarlos en lugar de escribirlos.</Text>
+                
+                <Text style={styles.manualSubtitle}>Cómo usar:</Text>
+                <Text style={styles.manualText}>1. Toca el icono del micrófono en cualquier campo</Text>
+                <Text style={styles.manualText}>2. Permite el acceso al micrófono si se solicita</Text>
+                <Text style={styles.manualText}>3. Habla claramente el texto que deseas ingresar</Text>
+                <Text style={styles.manualText}>4. El texto aparecerá automáticamente en el campo</Text>
+                
+                <Text style={styles.manualSubtitle}>Consejos:</Text>
+                <Text style={styles.manualBullet}>• Habla en un ambiente sin ruido</Text>
+                <Text style={styles.manualBullet}>• Para números, di la cantidad completa (veintidós con cincuenta)</Text>
+                <Text style={styles.manualBullet}>• Puedes editar el texto después de dictarlo</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="6. Copias de Seguridad" 
+                expanded={expandedManualSection === 'backup'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'backup' ? null : 'backup')}
+              >
+                <Text style={styles.manualText}>Es importante hacer copias de seguridad regulares para proteger tus datos.</Text>
+                
+                <Text style={styles.manualSubtitle}>Crear Backup:</Text>
+                <Text style={styles.manualText}>1. Ve a Ajustes → Copia de Seguridad</Text>
+                <Text style={styles.manualText}>2. Toca Crear Backup</Text>
+                <Text style={styles.manualText}>3. Se descargará un archivo JSON con todos tus datos</Text>
+                <Text style={styles.manualText}>4. Guárdalo en un lugar seguro (nube, ordenador, etc.)</Text>
+                
+                <Text style={styles.manualSubtitle}>Restaurar Backup:</Text>
+                <Text style={styles.manualText}>1. Toca Restaurar</Text>
+                <Text style={styles.manualText}>2. Selecciona el archivo de backup guardado</Text>
+                <Text style={styles.manualText}>3. Confirma la restauración (sobrescribirá datos actuales)</Text>
+                <Text style={styles.manualText}>4. La aplicación se recargará automáticamente</Text>
+                
+                <Text style={styles.manualImportant}>⚠️ Importante: Nunca compartas tu archivo de backup. Contiene tu código de activación y datos sensibles.</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="7. Totales en Tiempo Real" 
+                expanded={expandedManualSection === 'totals'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'totals' ? null : 'totals')}
+              >
+                <Text style={styles.manualText}>En la pantalla principal verás dos tarjetas verdes en la parte superior:</Text>
+                
+                <Text style={styles.manualBullet}><Text style={styles.manualBold}>Total Día:</Text> Suma de todos los servicios registrados hoy (después de descuentos)</Text>
+                <Text style={styles.manualBullet}><Text style={styles.manualBold}>Total Mes:</Text> Suma de todos los servicios del mes actual seleccionado</Text>
+                
+                <Text style={styles.manualText}>Estos totales se actualizan automáticamente cada vez que:</Text>
+                <Text style={styles.manualBullet}>• Añades un nuevo servicio</Text>
+                <Text style={styles.manualBullet}>• Editas un servicio existente</Text>
+                <Text style={styles.manualBullet}>• Eliminas un servicio</Text>
+                <Text style={styles.manualBullet}>• Cambias de mes en el selector</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="8. Preguntas Frecuentes" 
+                expanded={expandedManualSection === 'faq'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'faq' ? null : 'faq')}
+              >
+                <Text style={styles.manualSubtitle}>¿Qué pasa si mi suscripción expira?</Text>
+                <Text style={styles.manualText}>Podrás seguir viendo tus datos pero no podrás añadir nuevos servicios. Contacta con soporte para renovar.</Text>
+                
+                <Text style={styles.manualSubtitle}>¿Puedo usar la app en varios dispositivos?</Text>
+                <Text style={styles.manualText}>Cada código de activación está vinculado a un único dispositivo. Necesitarás códigos diferentes para cada dispositivo.</Text>
+                
+                <Text style={styles.manualSubtitle}>¿Cómo cambio de dispositivo?</Text>
+                <Text style={styles.manualText}>1. Crea una copia de seguridad en el dispositivo viejo</Text>
+                <Text style={styles.manualText}>2. Contacta con soporte para transferir tu código</Text>
+                <Text style={styles.manualText}>3. Restaura el backup en el nuevo dispositivo</Text>
+                
+                <Text style={styles.manualSubtitle}>¿Los importes se redondean?</Text>
+                <Text style={styles.manualText}>No. La aplicación mantiene siempre 2 decimales de precisión en todos los cálculos y reportes. Nunca se redondean precios ni descuentos.</Text>
+              </ManualSection>
+
+              <ManualSection 
+                title="9. Soporte" 
+                expanded={expandedManualSection === 'support'}
+                onToggle={() => setExpandedManualSection(expandedManualSection === 'support' ? null : 'support')}
+              >
+                <Text style={styles.manualText}>Si tienes problemas o necesitas ayuda:</Text>
+                
+                <Text style={styles.manualBullet}>• Contacta con el equipo de soporte</Text>
+                <Text style={styles.manualBullet}>• Proporciona detalles del problema</Text>
+                <Text style={styles.manualBullet}>• Si es necesario, envía capturas de pantalla</Text>
+                
+                <Text style={styles.manualText}>Para renovar tu suscripción o adquirir códigos adicionales, contacta con el servicio de ventas.</Text>
+              </ManualSection>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -1620,5 +1833,67 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  manualContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  manualSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  manualSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  manualSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#111827',
+  },
+  manualSectionContent: {
+    marginTop: 12,
+    gap: 8,
+  },
+  manualText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  manualSubtitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#111827',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  manualBullet: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+    marginBottom: 4,
+    paddingLeft: 8,
+  },
+  manualBold: {
+    fontWeight: '600' as const,
+    color: '#111827',
+  },
+  manualImportant: {
+    fontSize: 14,
+    color: '#B91C1C',
+    lineHeight: 20,
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+    fontWeight: '500' as const,
   },
 });

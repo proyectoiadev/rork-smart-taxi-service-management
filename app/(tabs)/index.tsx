@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -323,6 +323,25 @@ export default function HomeScreen() {
 
   const abonadoServices = filteredServices.filter(s => s.paymentMethod === 'Abonado');
 
+  const todayTotal = useMemo(() => {
+    const todayServices = services.filter(s => s.date === new Date().toISOString().split('T')[0]);
+    return todayServices.reduce((acc, service) => {
+      const price = parseFloat(service.price) || 0;
+      const discountPercent = parseFloat(service.discountPercent) || 0;
+      const discountAmount = (price * discountPercent) / 100;
+      return acc + (price - discountAmount);
+    }, 0);
+  }, [services]);
+
+  const monthTotal = useMemo(() => {
+    return services.reduce((acc, service) => {
+      const price = parseFloat(service.price) || 0;
+      const discountPercent = parseFloat(service.discountPercent) || 0;
+      const discountAmount = (price * discountPercent) / 100;
+      return acc + (price - discountAmount);
+    }, 0);
+  }, [services]);
+
   const getVisibleMonths = () => {
     const months = [];
     const today = new Date();
@@ -462,15 +481,19 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Servicios</Text>
-            <Text style={styles.headerSubtitle}>{settings.cooperativeName}</Text>
+          <Text style={styles.headerTitle}>Servicios</Text>
+          <Text style={styles.headerSubtitle}>{settings.cooperativeName}</Text>
+        </View>
+        
+        <View style={styles.totalsContainer}>
+          <View style={styles.totalCard}>
+            <Text style={styles.totalCardLabel}>Total Día</Text>
+            <Text style={styles.totalCardValue}>€{todayTotal.toFixed(2)}</Text>
           </View>
-          <View style={styles.headerRight}>
-            <View style={styles.totalBadge}>
-              <Text style={styles.totalBadgeLabel}>Total</Text>
-              <Text style={styles.totalBadgeValue}>€{totals.totalFinal.toFixed(2)}</Text>
-            </View>
+          
+          <View style={styles.totalCard}>
+            <Text style={styles.totalCardLabel}>Total Mes</Text>
+            <Text style={styles.totalCardValue}>€{monthTotal.toFixed(2)}</Text>
           </View>
         </View>
       </View>
@@ -499,12 +522,17 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.mainScrollView}
-        contentContainerStyle={styles.mainScrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={true}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
+        <ScrollView 
+          style={styles.mainScrollView}
+          contentContainerStyle={styles.mainScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+        >
           <View style={styles.addServiceCard}>
             <TouchableOpacity 
               style={styles.addServiceHeader}
@@ -885,7 +913,8 @@ export default function HomeScreen() {
               );
             })
           )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <Modal
         visible={showEditModal}
@@ -1126,16 +1155,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
   headerTop: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  headerLeft: {
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -1151,27 +1179,34 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
   },
-  headerRight: {
-    width: '100%',
-    alignItems: 'center',
+  totalsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 4,
   },
-  totalBadge: {
+  totalCard: {
+    flex: 1,
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    minWidth: 160,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  totalBadgeLabel: {
-    fontSize: 12,
+  totalCardLabel: {
+    fontSize: 13,
     color: '#FFFFFF',
     opacity: 0.9,
-    marginBottom: 4,
+    marginBottom: 8,
     textAlign: 'center',
+    fontWeight: '600' as const,
   },
-  totalBadgeValue: {
-    fontSize: 24,
+  totalCardValue: {
+    fontSize: 22,
     fontWeight: '700' as const,
     color: '#FFFFFF',
     textAlign: 'center',
