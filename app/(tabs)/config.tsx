@@ -74,12 +74,24 @@ export default function ConfigScreen() {
   const [showCloseCycleModal, setShowCloseCycleModal] = useState(false);
   const [closeCycleEndDate, setCloseCycleEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showRenewalInfoModal, setShowRenewalInfoModal] = useState(false);
   const [showUserManual, setShowUserManual] = useState(false);
   const [expandedManualSection, setExpandedManualSection] = useState<string | null>(null);
 
   useEffect(() => {
     loadSubscriptionInfo();
   }, []);
+
+  useEffect(() => {
+    if (showRenewalInfoModal) {
+      const timer = setTimeout(() => {
+        setShowRenewalInfoModal(false);
+        setShowRenewal(true);
+      }, 20000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showRenewalInfoModal]);
 
   useEffect(() => {
     setCooperativeName(settings.cooperativeName);
@@ -563,7 +575,7 @@ export default function ConfigScreen() {
               
               <TouchableOpacity
                 style={[styles.card, { marginTop: 12 }]}
-                onPress={() => setShowRenewal(true)}
+                onPress={() => setShowRenewalInfoModal(true)}
               >
                 <View style={styles.cardIcon}>
                   <CreditCard size={24} color="#4CAF50" />
@@ -1043,6 +1055,71 @@ export default function ConfigScreen() {
       </Modal>
 
       <Modal
+        visible={showRenewalInfoModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {
+          setShowRenewalInfoModal(false);
+          setShowRenewal(true);
+        }}
+      >
+        <View style={styles.renewalInfoModalOverlay}>
+          <View style={styles.renewalInfoModalContent}>
+            <View style={styles.renewalInfoHeader}>
+              <View style={styles.renewalInfoBadge}>
+                <Text style={styles.renewalInfoBadgeText}>SUSCRIPCIÓN TRIMESTRAL</Text>
+              </View>
+              <Text style={styles.renewalInfoAmount}>39,99€</Text>
+              <Text style={styles.renewalInfoPeriod}>por 90 días</Text>
+            </View>
+
+            <View style={styles.renewalInfoFeaturesSection}>
+              <Text style={styles.renewalInfoSectionTitle}>Incluye:</Text>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Registro ilimitado de servicios</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Gestión completa de abonados</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Reportes en PDF, HTML y CSV</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Entrada por voz en todos los campos</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Copia de seguridad y restauración</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Ciclos de facturación sin límite</Text>
+              </View>
+              
+              <View style={styles.renewalInfoFeature}>
+                <CheckCircle2 size={20} color="#4CAF50" />
+                <Text style={styles.renewalInfoFeatureText}>Soporte prioritario</Text>
+              </View>
+            </View>
+
+            <View style={styles.renewalInfoNote}>
+              <Text style={styles.renewalInfoNoteText}>Contacta con soporte para obtener tu código de renovación</Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showPricingModal}
         animationType="slide"
         transparent={true}
@@ -1062,7 +1139,7 @@ export default function ConfigScreen() {
                 <View style={styles.pricingBadge}>
                   <Text style={styles.pricingBadgeText}>PLAN TRIMESTRAL</Text>
                 </View>
-                <Text style={styles.pricingAmount}>29.99€</Text>
+                <Text style={styles.pricingAmount}>39,99€</Text>
                 <Text style={styles.pricingPeriod}>por 90 días</Text>
               </View>
               
@@ -1131,16 +1208,16 @@ export default function ConfigScreen() {
               </View>
               
               <View style={styles.renewalInfoSection}>
-                <View style={styles.renewalInfoCard}>
-                  <Text style={styles.renewalInfoTitle}>📞 Cómo Renovar</Text>
-                  <Text style={styles.renewalInfoText}>
+                <View style={styles.renewalPricingInfoCard}>
+                  <Text style={styles.renewalPricingInfoTitle}>📞 Cómo Renovar</Text>
+                  <Text style={styles.renewalPricingInfoText}>
                     Para renovar tu suscripción, contacta a soporte y solicita un código de activación. Cada código es único y válido por 90 días.
                   </Text>
                 </View>
                 
-                <View style={styles.renewalInfoCard}>
-                  <Text style={styles.renewalInfoTitle}>🔒 Seguridad</Text>
-                  <Text style={styles.renewalInfoText}>
+                <View style={styles.renewalPricingInfoCard}>
+                  <Text style={styles.renewalPricingInfoTitle}>🔒 Seguridad</Text>
+                  <Text style={styles.renewalPricingInfoText}>
                     Cada código de activación está vinculado a tu dispositivo. No compartas tu código con nadie.
                   </Text>
                 </View>
@@ -1895,5 +1972,103 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     borderRadius: 8,
     fontWeight: '500' as const,
+  },
+  renewalInfoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  renewalInfoModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 450,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  renewalInfoHeader: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    backgroundColor: '#4CAF50',
+  },
+  renewalInfoBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  renewalInfoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700' as const,
+    letterSpacing: 1.5,
+  },
+  renewalInfoAmount: {
+    fontSize: 56,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  renewalInfoPeriod: {
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500' as const,
+  },
+  renewalInfoFeaturesSection: {
+    padding: 24,
+  },
+  renewalInfoSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#111827',
+    marginBottom: 20,
+  },
+  renewalInfoFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  renewalInfoFeatureText: {
+    fontSize: 16,
+    color: '#374151',
+    flex: 1,
+  },
+  renewalInfoNote: {
+    backgroundColor: '#F0FDF4',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  renewalInfoNoteText: {
+    fontSize: 14,
+    color: '#166534',
+    textAlign: 'center',
+    fontWeight: '500' as const,
+  },
+  renewalPricingInfoCard: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  renewalPricingInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#111827',
+    marginBottom: 8,
+  },
+  renewalPricingInfoText: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
   },
 });
