@@ -66,14 +66,14 @@ export default function CycleReportScreen() {
       const discountPercent = parseFloat(service.discountPercent) || 0;
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
-      const formattedDiscountPercent = discountPercent > 0 ? String(discountPercent) : '0';
+      const formattedDiscountPercent = discountPercent > 0 ? discountPercent.toFixed(2) : '0';
       
       return `
         <tr>
           <td style="color: #6b7280;">${index + 1}</td>
-          <td style="color: #6b7280;">${new Date(service.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
+          <td style="color: #6b7280;">${service.date.split('-').reverse().join('-')}</td>
           <td style="color: #374151;">${service.origin} → ${service.destination}</td>
-          <td style="color: #374151; padding-left: 8px;">${service.clientName || '-'}</td>
+          <td style="color: #374151; padding-left: 4px;">${service.clientName || '-'}</td>
           <td style="text-align: right; color: #374151; white-space: nowrap;">${price.toFixed(2)}&nbsp;€</td>
           <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'}; white-space: nowrap;">${discountPercent > 0 ? `-${formattedDiscountPercent}%` : '-'}</td>
           <td style="text-align: right; color: #4caf50; font-weight: 700; white-space: nowrap;">${finalPrice.toFixed(2)}&nbsp;€</td>
@@ -421,7 +421,7 @@ export default function CycleReportScreen() {
             <th>#</th>
             <th>Fecha</th>
             <th>Ruta</th>
-            <th style="padding-left: 8px;">Cliente</th>
+            <th style="padding-left: 4px;">Cliente</th>
             <th class="right">Precio</th>
             <th class="right">Desc.</th>
             <th class="right">Total</th>

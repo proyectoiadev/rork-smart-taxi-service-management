@@ -138,13 +138,14 @@ export default function GeneratePDFScreen() {
                   const discountPercent = parseFloat(service.discountPercent) || 0;
                   const discountAmount = (price * discountPercent) / 100;
                   const finalPrice = price - discountAmount;
-                  const formattedDiscountPercent = discountPercent > 0 ? String(discountPercent) : '0';
+                  const formattedDiscountPercent = discountPercent > 0 ? discountPercent.toFixed(2) : '0';
+                  const formattedDate = service.date.split('-').reverse().join('-');
 
                   return (
                     <View key={service.id} style={styles.pdfTableRow}>
                       <Text style={[styles.pdfTableCell, { width: 35 }]}>{index + 1}</Text>
                       <Text style={[styles.pdfTableCell, { width: 70 }]}>
-                        {new Date(service.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
+                        {formattedDate}
                       </Text>
                       <Text style={[styles.pdfTableCell, { flex: 1, minWidth: 200 }]} numberOfLines={1}>
                         {service.origin} → {service.destination}

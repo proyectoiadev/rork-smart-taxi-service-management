@@ -412,6 +412,19 @@ export default function HomeScreen() {
     return { daysInMonth, startingDayOfWeek, year, month };
   };
 
+  const formatDateToDDMMYYYY = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatDateFromDDMMYYYY = (dateStr: string): string => {
+    if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
+      return dateStr;
+    }
+    const [day, month, year] = dateStr.split('-');
+    return `${year}-${month}-${day}`;
+  };
+
   const handleDateSelect = (day: number, isEdit: boolean = false, isViewFilter: boolean = false) => {
     const month = isViewFilter ? viewCalendarMonth : (isEdit ? editCalendarMonth : calendarMonth);
     const year = month.getFullYear();
@@ -642,11 +655,7 @@ export default function HomeScreen() {
                 >
                   <Calendar size={18} color="#6B7280" style={styles.calendarIcon} />
                   <Text style={styles.dateInputText}>
-                    {new Date(serviceDate).toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })}
+                    {formatDateToDDMMYYYY(serviceDate)}
                   </Text>
                 </TouchableOpacity>
                 {showDatePicker && renderCalendar(false)}
@@ -876,16 +885,8 @@ export default function HomeScreen() {
               <Calendar size={18} color="#4CAF50" />
               <Text style={styles.dateFilterButtonText}>
                 {selectedViewDate 
-                  ? new Date(selectedViewDate).toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })
-                  : new Date().toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    }) + ' (Hoy)'
+                  ? formatDateToDDMMYYYY(selectedViewDate)
+                  : formatDateToDDMMYYYY(new Date().toISOString().split('T')[0]) + ' (Hoy)'
                 }
               </Text>
             </TouchableOpacity>
@@ -951,7 +952,7 @@ export default function HomeScreen() {
                     <View>
                       <Text style={styles.serviceCardPrice}>Precio: €{price.toFixed(2)}</Text>
                       {discountAmount > 0 && (
-                        <Text style={styles.serviceCardDiscount}>-{service.discountPercent}%</Text>
+                        <Text style={styles.serviceCardDiscount}>-{discountPercent.toFixed(2)}%</Text>
                       )}
                     </View>
                     <Text style={styles.serviceCardTotal}>Total: €{finalPrice.toFixed(2)}</Text>
@@ -1034,11 +1035,7 @@ export default function HomeScreen() {
                   >
                     <Calendar size={18} color="#6B7280" style={styles.calendarIcon} />
                     <Text style={styles.dateInputText}>
-                      {new Date(editDate).toLocaleDateString('es-ES', { 
-                        day: '2-digit', 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })}
+                      {formatDateToDDMMYYYY(editDate)}
                     </Text>
                   </TouchableOpacity>
                   {showEditDatePicker && renderCalendar(true)}
@@ -1162,12 +1159,17 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonSecondary]}
                   onPress={handleCancelEdit}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.modalButtonSecondaryText}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
-                  onPress={handleSaveEdit}
+                  onPress={() => {
+                    console.log('Save button pressed');
+                    handleSaveEdit();
+                  }}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.modalButtonPrimaryText}>Guardar</Text>
                 </TouchableOpacity>
