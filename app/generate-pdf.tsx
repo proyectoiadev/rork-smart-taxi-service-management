@@ -159,7 +159,7 @@ export default function GeneratePDFScreen() {
                         {discountPercent > 0 ? `-${service.discountPercent}%` : '-'}
                       </Text>
                       <Text style={[styles.pdfTableCell, { width: 85, textAlign: 'right' as const, fontWeight: '700' as const, color: '#4CAF50' }]}>
-                        {finalPrice.toFixed(2)}€
+                        {Math.round(finalPrice * 100) / 100}€
                       </Text>
                     </View>
                   );
