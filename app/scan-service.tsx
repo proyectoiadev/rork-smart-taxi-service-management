@@ -18,8 +18,6 @@ import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
-import { generateObject } from '@rork/toolkit-sdk';
-import { z } from 'zod';
 
 
 interface ExtractedData {
@@ -101,111 +99,35 @@ export default function ScanServiceScreen() {
   };
 
   const extractDataFromImage = async (imageUri: string) => {
-    console.log('Starting OCR extraction...');
+    console.log('Starting manual entry with image preview...');
     setIsProcessing(true);
 
     try {
       console.log('Image URI:', imageUri);
       
-      const base64Image = await convertImageToBase64(imageUri);
-      console.log('Image converted to base64, length:', base64Image.length);
-
-      if (!base64Image || base64Image.length < 100) {
-        throw new Error('La imagen no se pudo convertir correctamente');
-      }
-
-      const extractionSchema = z.object({
-        origin: z.string().describe('La dirección o lugar de recogida exacto'),
-        destination: z.string().describe('La dirección o lugar de destino exacto'),
-        company: z.string().describe('El nombre de la empresa o cliente'),
-        price: z.string().describe('El precio del servicio (solo número, sin símbolos)'),
-        date: z.string().describe('La fecha del servicio en formato YYYY-MM-DD'),
-        observations: z.string().describe('Observaciones o notas adicionales, incluye si dice CREDITO o ABONADO'),
-        pickupTime: z.string().optional().describe('Hora de recogida en formato HH:MM'),
-        abn: z.string().optional().describe('Número ABN si está visible'),
+      setExtractedData({
+        origin: '',
+        destination: '',
+        company: '',
+        price: '',
+        date: new Date().toISOString().split('T')[0],
+        observations: '',
       });
-
-      console.log('Calling generateObject API...');
-
-      const extracted = await generateObject({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Analiza esta imagen de un despacho o ticket de servicio de taxi/transporte.
-
-Extrae EXACTAMENTE los siguientes datos del texto visible:
-
-1. ORIGEN: La dirección o lugar de recogida (puede estar después de "RECOGIDA:" o "-RECOGIDA:")
-2. DESTINO: La dirección o lugar de destino (puede estar después de "-DESTINO:")
-3. EMPRESA/CLIENTE: El nombre de la empresa o cliente (puede estar después de "NOMBRE:" o "-NOMBRE:")
-4. PRECIO: El precio del servicio si está visible (busca números con €, EUR, o después de "PRECIO:", "IMPORTE:")
-5. FECHA: La fecha del servicio en formato YYYY-MM-DD (busca "FECHA:" o similar)
-6. HORA_RECOGIDA: La hora de recogida si está disponible (busca "HORA RECOGIDA" o similar)
-7. ABN: El número ABN si está visible (busca "ABN:" o similar)
-8. OBSERVACIONES: Cualquier nota adicional relevante (busca "OBSERVACIONES:" o similar, incluye si dice "***CREDITO***" o "ABONADO")
-
-IMPORTANTE:
-- Extrae el texto EXACTAMENTE como aparece en la imagen
-- Si dice "***CREDITO***" o "ABONADO" en observaciones, inclúyelo
-- Si no puedes encontrar algún dato, devuelve un string vacío ""
-- Para direcciones largas, copia el texto completo visible
-- La fecha debe estar en formato YYYY-MM-DD (ejemplo: 2025-10-17)
-- Para el precio, extrae solo el número sin símbolos (ejemplo: si dice "€45.50" devuelve "45.50")`
-              },
-              {
-                type: 'image',
-                image: base64Image,
-              },
-            ],
-          },
-        ],
-        schema: extractionSchema,
-      });
-
-      console.log('Parsed data:', extracted);
-
-      const validatedDate = validateDate(extracted.date || '');
-      const cleanPrice = extracted.price ? extracted.price.replace(/[^0-9.]/g, '') : '';
-
-      setExtractedData(extracted);
-      setEditOrigin(extracted.origin || '');
-      setEditDestination(extracted.destination || '');
-      setEditCompany(extracted.company || '');
-      setEditPrice(cleanPrice);
-      setEditDate(validatedDate);
-      setEditObservations(extracted.observations || '');
+      setEditOrigin('');
+      setEditDestination('');
+      setEditCompany('');
+      setEditPrice('');
+      setEditDate(new Date().toISOString().split('T')[0]);
+      setEditObservations('');
       setEditDiscount('0');
 
       setIsConfirming(true);
     } catch (error) {
-      console.error('Error extracting data:', error);
-      
-      let userMessage = 'No se pudo extraer los datos de la imagen.';
-      
-      if (error instanceof Error) {
-        console.error('Error type:', error.constructor.name);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        
-        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
-          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Verifica tu conexión a internet e intenta nuevamente.\n\nDetalles técnicos: ' + error.message;
-        } else if (error.message.includes('JSON') || error.message.includes('parse')) {
-          userMessage = '📄 Error al procesar la respuesta\n\nNo se pudo interpretar el contenido. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo\n• La foto tenga buena iluminación\n\nDetalles: ' + error.message;
-        } else {
-          userMessage = `❌ Error: ${error.message}`;
-        }
-      }
-      
+      console.error('Error processing image:', error);
       Alert.alert(
-        'Error en extracción',
-        userMessage,
-        [
-          { text: 'Entendido' }
-        ]
+        'Error',
+        'No se pudo procesar la imagen. Por favor intenta nuevamente.',
+        [{ text: 'Entendido' }]
       );
     } finally {
       setIsProcessing(false);
@@ -380,8 +302,8 @@ IMPORTANTE:
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.confirmCard}>
-              <Text style={styles.confirmTitle}>Datos Extraídos</Text>
-              <Text style={styles.confirmSubtitle}>Revisa y edita los datos antes de guardar</Text>
+              <Text style={styles.confirmTitle}>Datos del Servicio</Text>
+              <Text style={styles.confirmSubtitle}>Completa los datos del servicio</Text>
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Fecha del Servicio *</Text>
@@ -492,9 +414,9 @@ IMPORTANTE:
       ) : (
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Escaneo Inteligente</Text>
+            <Text style={styles.infoTitle}>Registrar Servicio Rápido</Text>
             <Text style={styles.infoText}>
-              Toma una foto o selecciona una imagen de un despacho de servicio. La IA extraerá automáticamente los datos del documento:
+              Puedes tomar una foto del despacho de servicio para tenerla como referencia mientras ingresas los datos manualmente:
             </Text>
             <View style={styles.infoList}>
               <Text style={styles.infoListItem}>• Origen y destino</Text>
@@ -504,7 +426,7 @@ IMPORTANTE:
               <Text style={styles.infoListItem}>• Observaciones</Text>
             </View>
             <Text style={styles.infoNote}>
-              Nota: Podrás revisar y editar todos los datos antes de guardar.
+              Nota: También puedes registrar el servicio directamente sin foto usando el botón &quot;Entrada Manual&quot; abajo.
             </Text>
           </View>
 
@@ -514,7 +436,7 @@ IMPORTANTE:
                 <Camera size={32} color="#4CAF50" />
               </View>
               <Text style={styles.actionButtonText}>Tomar Foto</Text>
-              <Text style={styles.actionButtonSubtext}>Usa la cámara del dispositivo</Text>
+              <Text style={styles.actionButtonSubtext}>Foto de referencia + entrada manual</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton} onPress={handlePickImage}>
@@ -522,7 +444,35 @@ IMPORTANTE:
                 <Upload size={32} color="#4CAF50" />
               </View>
               <Text style={styles.actionButtonText}>Seleccionar Imagen</Text>
-              <Text style={styles.actionButtonSubtext}>Desde la galería</Text>
+              <Text style={styles.actionButtonSubtext}>Imagen de referencia + entrada manual</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.manualButton]} 
+              onPress={() => {
+                setExtractedData({
+                  origin: '',
+                  destination: '',
+                  company: '',
+                  price: '',
+                  date: new Date().toISOString().split('T')[0],
+                  observations: '',
+                });
+                setEditOrigin('');
+                setEditDestination('');
+                setEditCompany('');
+                setEditPrice('');
+                setEditDate(new Date().toISOString().split('T')[0]);
+                setEditObservations('');
+                setEditDiscount('0');
+                setIsConfirming(true);
+              }}
+            >
+              <View style={[styles.actionButtonIcon, styles.manualButtonIcon]}>
+                <Check size={32} color="#2563EB" />
+              </View>
+              <Text style={styles.actionButtonText}>Entrada Manual</Text>
+              <Text style={styles.actionButtonSubtext}>Sin foto, solo formulario</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -745,5 +695,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  manualButton: {
+    borderColor: '#BFDBFE',
+  },
+  manualButtonIcon: {
+    backgroundColor: '#DBEAFE',
   },
 });
