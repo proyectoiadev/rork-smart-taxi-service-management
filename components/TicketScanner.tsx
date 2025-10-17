@@ -86,10 +86,14 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
       console.log('Starting image processing...');
       console.log('Image data length:', imageBase64.length);
       
-      let cleanedBase64 = imageBase64;
       if (!imageBase64.startsWith('data:image')) {
         console.error('Invalid image format - missing data URI prefix');
         throw new Error('Formato de imagen inválido');
+      }
+
+      if (typeof process !== 'undefined' && process.env && !process.env.EXPO_PUBLIC_TOOLKIT_URL) {
+        console.error('EXPO_PUBLIC_TOOLKIT_URL not configured');
+        throw new Error('La aplicación no está configurada correctamente. Por favor, contacta al soporte.');
       }
       
       const prompt = `Analiza este ticket de taxi y extrae la siguiente información en formato JSON. Si hay múltiples servicios en la imagen, devuelve un array con cada uno:
@@ -119,7 +123,7 @@ INSTRUCCIONES:
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
 
       console.log('Calling generateText with Rork SDK...');
-      console.log('Image preview:', cleanedBase64.substring(0, 100));
+      console.log('Image preview:', imageBase64.substring(0, 100));
       
       const textResponse = await generateText({
         messages: [
@@ -127,7 +131,7 @@ INSTRUCCIONES:
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image', image: cleanedBase64 },
+              { type: 'image', image: imageBase64 },
             ],
           },
         ],
@@ -167,10 +171,10 @@ INSTRUCCIONES:
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
         
-        if (error.message.includes('fetch')) {
+        if (error.message.includes('fetch') || error.message.includes('Network') || error.message.includes('Failed to fetch')) {
           Alert.alert(
             'Error de Conexión',
-            'No se pudo conectar con el servicio de procesamiento de imágenes. Por favor, verifica tu conexión a internet e intenta de nuevo.'
+            'No se pudo conectar con el servicio de IA. Verifica que:\n\n1. Estás ejecutando la app desde la plataforma Rork\n2. Tienes conexión a internet\n3. La app tiene los permisos necesarios\n\nSi el problema persiste, contacta al soporte.'
           );
         } else {
           Alert.alert('Error', `No se pudo procesar la imagen: ${error.message}`);
