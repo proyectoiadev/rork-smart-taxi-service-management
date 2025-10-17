@@ -83,6 +83,10 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
     setIsProcessing(true);
     
     try {
+      console.log('Starting image processing...');
+      console.log('Image data length:', imageBase64.length);
+      console.log('Image data prefix:', imageBase64.substring(0, 50));
+      
       const prompt = `Analiza este ticket de taxi y extrae la siguiente información en formato JSON. Si hay múltiples servicios en la imagen, devuelve un array con cada uno:
 
 FORMATO DE RESPUESTA (IMPORTANTE: Devuelve SOLO el JSON, sin texto adicional):
@@ -109,6 +113,8 @@ INSTRUCCIONES:
 - Si hay múltiples servicios, añádelos al array "services"
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
 
+      console.log('Calling generateText...');
+      
       const textResponse = await generateText({
         messages: [
           {
@@ -146,7 +152,9 @@ INSTRUCCIONES:
       }
     } catch (error) {
       console.error('Error processing image:', error);
-      Alert.alert('Error', 'No se pudo procesar la imagen del ticket');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('Error details:', errorMessage);
+      Alert.alert('Error', `No se pudo procesar la imagen del ticket: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
