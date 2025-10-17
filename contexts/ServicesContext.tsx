@@ -88,12 +88,28 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
 
   const deleteService = useCallback(async (id: number) => {
     console.log('deleteService called with id:', id);
-    console.log('Current services:', services.length);
+    console.log('Current services before delete:', JSON.stringify(services.map(s => ({ id: s.id, date: s.date }))));
+    console.log('Attempting to delete service with id:', id);
+    
+    const serviceExists = services.find(s => s.id === id);
+    if (!serviceExists) {
+      console.error('Service not found with id:', id);
+      throw new Error('Servicio no encontrado');
+    }
+    
     const updatedServices = services.filter(s => s.id !== id);
-    console.log('Updated services after filter:', updatedServices.length);
+    console.log('Services after filter:', updatedServices.length);
+    console.log('Filtered services:', JSON.stringify(updatedServices.map(s => ({ id: s.id, date: s.date }))));
+    
     setServices(updatedServices);
+    console.log('State updated with new services array');
+    
     await saveServices(currentMonth, updatedServices);
-    console.log('Services deleted and saved successfully');
+    console.log('Services saved to storage successfully');
+    
+    const verifyKey = getStorageKey(CURRENT_YEAR, currentMonth);
+    const verifyStored = await AsyncStorage.getItem(verifyKey);
+    console.log('Verification - stored services count:', verifyStored ? JSON.parse(verifyStored).length : 0);
   }, [services, currentMonth, saveServices]);
 
   const updateService = useCallback(async (id: number, updatedData: Partial<Omit<Service, 'id'>>) => {

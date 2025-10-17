@@ -233,13 +233,22 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Deleting service with id:', id);
+              console.log('=== Starting delete operation ===');
+              console.log('Service ID to delete:', id);
+              console.log('Service ID type:', typeof id);
+              console.log('Current services in state:', services.length);
+              console.log('All service IDs:', services.map(s => ({ id: s.id, type: typeof s.id })));
+              
               await deleteService(id);
-              console.log('Service deleted successfully');
+              
+              console.log('Delete operation completed');
+              console.log('=== Delete operation finished ===');
               Alert.alert('Éxito', 'Servicio eliminado correctamente');
             } catch (error) {
-              console.error('Error deleting service:', error);
-              Alert.alert('Error', 'No se pudo eliminar el servicio');
+              console.error('=== Error in delete operation ===');
+              console.error('Error details:', error);
+              console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+              Alert.alert('Error', 'No se pudo eliminar el servicio: ' + (error instanceof Error ? error.message : 'Error desconocido'));
             }
           },
         },
