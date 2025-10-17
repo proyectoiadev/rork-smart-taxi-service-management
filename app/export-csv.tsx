@@ -27,7 +27,7 @@ export default function ExportCSVScreen() {
         return;
       }
 
-      let csvContent = 'Fecha,Mes,Origen,Destino,Empresa,Precio,Descuento(%),Descuento(€),Total,Observaciones\n';
+      let csvContent = 'Fecha,Mes,Origen,Destino,Empresa,Precio,Descuento (%),Descuento (€),Total,Observaciones\n';
       
       allServices.forEach(service => {
         const price = parseFloat(service.price) || 0;
@@ -43,7 +43,7 @@ export default function ExportCSVScreen() {
           `"${service.destination}"`,
           `"${service.company}"`,
           price.toFixed(2),
-          parseFloat(service.discountPercent).toFixed(2),
+          discountPercent.toFixed(2),
           discountAmount.toFixed(2),
           finalPrice.toFixed(2),
           `"${service.observations.replace(/"/g, '""')}"`,
