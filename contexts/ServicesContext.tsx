@@ -51,6 +51,20 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     }
   };
 
+  const totals = useMemo(() => {
+    return services.reduce((acc, service) => {
+      const price = parseFloat(service.price) || 0;
+      const discountPercent = parseFloat(service.discountPercent) || 0;
+      const discountAmount = (price * discountPercent) / 100;
+      
+      acc.totalPrice += price;
+      acc.totalDiscount += discountAmount;
+      acc.totalFinal += (price - discountAmount);
+      
+      return acc;
+    }, { totalPrice: 0, totalDiscount: 0, totalFinal: 0 });
+  }, [services]);
+
   const saveServices = useCallback(async (month: number, updatedServices: Service[]) => {
     try {
       const key = getStorageKey(CURRENT_YEAR, month);
@@ -113,20 +127,6 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
 
   const getServicesByCycle = useCallback((cycleId: string) => {
     return services.filter(s => s.billingCycleId === cycleId);
-  }, [services]);
-
-  const totals = useMemo(() => {
-    return services.reduce((acc, service) => {
-      const price = parseFloat(service.price) || 0;
-      const discountPercent = parseFloat(service.discountPercent) || 0;
-      const discountAmount = (price * discountPercent) / 100;
-      
-      acc.totalPrice += price;
-      acc.totalDiscount += discountAmount;
-      acc.totalFinal += (price - discountAmount);
-      
-      return acc;
-    }, { totalPrice: 0, totalDiscount: 0, totalFinal: 0 });
   }, [services]);
 
   return {
