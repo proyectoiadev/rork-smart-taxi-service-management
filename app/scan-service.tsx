@@ -123,18 +123,30 @@ Responde ÚNICAMENTE en formato JSON válido:
 
       console.log('Calling generateText API...');
       console.log('Image base64 prefix:', base64Image.substring(0, 50));
+      console.log('EXPO_PUBLIC_TOOLKIT_URL:', process.env.EXPO_PUBLIC_TOOLKIT_URL);
       
-      const result = await generateText({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image', image: base64Image },
-            ],
-          },
-        ],
-      });
+      let result: string;
+      try {
+        result = await generateText({
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image', image: base64Image },
+              ],
+            },
+          ],
+        });
+      } catch (fetchError) {
+        console.error('generateText failed, error:', fetchError);
+        console.error('Error details:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
+        
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          throw new Error('No se pudo conectar con el servicio de IA. Por favor, verifica tu conexión a internet y que estés usando la aplicación en un entorno compatible.');
+        }
+        throw fetchError;
+      }
 
       console.log('AI Response received');
       console.log('Response:', result);
@@ -166,7 +178,7 @@ Responde ÚNICAMENTE en formato JSON válido:
       
       Alert.alert(
         'Error',
-        `No se pudo extraer los datos: ${errorMessage}. Por favor, verifica tu conexión a internet e intenta nuevamente.`
+        `No se pudo extraer los datos: ${errorMessage}`
       );
     } finally {
       setIsProcessing(false);
