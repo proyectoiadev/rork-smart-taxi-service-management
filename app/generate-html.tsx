@@ -106,14 +106,16 @@ export default function GenerateHTMLScreen() {
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
 
+      const formattedDiscountPercent = service.discountPercent || '0';
+      
       return `
         <tr>
-          <td style="color: #6b7280;">${new Date(service.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
-          <td style="color: #374151;">${service.company}</td>
+          <td style="color: #6b7280;">${new Date(service.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
           <td style="color: #374151;">${service.origin} → ${service.destination}</td>
-          <td style="text-align: right; color: #374151;">${price.toFixed(2)} €</td>
-          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${discountPercent > 0 ? `-${service.discountPercent}%` : '-'}</td>
-          <td style="text-align: right; color: #4caf50; font-weight: 700;">${finalPrice.toFixed(2)} €</td>
+          <td style="color: #374151; padding-left: 2px;">${service.company}</td>
+          <td style="text-align: right; color: #374151;">${price.toFixed(2)}&nbsp;€</td>
+          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'};">${discountPercent > 0 ? `-${formattedDiscountPercent}%` : '-'}</td>
+          <td style="text-align: right; color: #4caf50; font-weight: 700;">${finalPrice.toFixed(2)}&nbsp;€</td>
         </tr>
         ${service.observations ? `
         <tr>
@@ -273,6 +275,7 @@ export default function GenerateHTMLScreen() {
       border-bottom: 1px solid #d1d5db;
       border-top: 1px solid #d1d5db;
       letter-spacing: 0.3px;
+      white-space: nowrap;
     }
     
     th.right {
@@ -283,6 +286,7 @@ export default function GenerateHTMLScreen() {
       padding: 7px 6px;
       border-bottom: 1px solid #e5e7eb;
       font-size: 10px;
+      white-space: nowrap;
     }
     
     tr:last-child td {
@@ -467,10 +471,10 @@ export default function GenerateHTMLScreen() {
         <thead>
           <tr>
             <th>Fecha</th>
-            <th>Empresa / Descripción</th>
             <th>Ruta</th>
+            <th style="text-align: left;">Cliente</th>
             <th class="right">Precio</th>
-            <th class="right">Descuento</th>
+            <th class="right">Desc.</th>
             <th class="right">Total</th>
           </tr>
         </thead>
@@ -487,15 +491,15 @@ export default function GenerateHTMLScreen() {
       </div>
       <div class="summary-item">
         <span class="summary-label">Ingresos Brutos:</span>
-        <span class="summary-value">${abonadoTotals.totalPrice.toFixed(2)} €</span>
+        <span class="summary-value">${abonadoTotals.totalPrice.toFixed(2)}&nbsp;€</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">Descuentos:</span>
-        <span class="summary-value discount">-${abonadoTotals.totalDiscount.toFixed(2)} €</span>
+        <span class="summary-value discount">-${abonadoTotals.totalDiscount.toFixed(2)}&nbsp;€</span>
       </div>
       <div class="summary-total">
         <span class="summary-label">Total Neto:</span>
-        <span class="summary-value">${abonadoTotals.totalFinal.toFixed(2)} €</span>
+        <span class="summary-value">${abonadoTotals.totalFinal.toFixed(2)}&nbsp;€</span>
       </div>
     </div>
     
