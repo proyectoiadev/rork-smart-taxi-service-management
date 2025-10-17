@@ -439,15 +439,15 @@ export default function CycleReportScreen() {
       </div>
       <div class="summary-item">
         <span class="summary-label">Ingresos Brutos:</span>
-        <span class="summary-value">${totals.totalPrice.toFixed(2)} €</span>
+        <span class="summary-value">${Math.round(totals.totalPrice * 100) / 100} €</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">Descuentos:</span>
-        <span class="summary-value discount">-${totals.totalDiscount.toFixed(2)} €</span>
+        <span class="summary-value discount">-${Math.round(totals.totalDiscount * 100) / 100} €</span>
       </div>
       <div class="summary-total">
         <span class="summary-label">Total Neto:</span>
-        <span class="summary-value">${totals.totalFinal.toFixed(2)} €</span>
+        <span class="summary-value">${Math.round(totals.totalFinal * 100) / 100} €</span>
       </div>
     </div>
     
