@@ -485,7 +485,7 @@ export default function HomeScreen() {
           ))}
         </View>
         <View style={styles.calendarGrid}>
-          {days}
+          {days.map((day) => day)}
         </View>
       </View>
     );
@@ -902,11 +902,9 @@ export default function HomeScreen() {
                     </View>
                   </View>
                   <Text style={styles.serviceCardDescription}>
-                    {service.origin || service.destination ? (
-                      `${service.origin}${service.origin && service.destination ? ' → ' : ''}${service.destination}`
-                    ) : (
-                      'Sin ruta especificada'
-                    )}
+                    {service.origin || service.destination
+                      ? `${service.origin}${service.origin && service.destination ? ' → ' : ''}${service.destination}`
+                      : 'Sin ruta especificada'}
                   </Text>
                   <Text style={styles.serviceCardCompany}>{service.company}</Text>
                   {service.observations && (
