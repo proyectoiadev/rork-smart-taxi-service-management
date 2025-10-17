@@ -49,46 +49,7 @@ export default function ScanServiceScreen() {
   const [editObservations, setEditObservations] = useState('');
   const [editDiscount, setEditDiscount] = useState('0');
 
-  const extractDataFromImage = async (imageUri: string) => {
-    console.log('AI extraction requested for image:', imageUri);
-    
-    Alert.alert(
-      'Función de IA No Disponible',
-      'La extracción automática de datos con IA requiere que el backend esté habilitado. Por favor, ingresa los datos manualmente.\n\nPara habilitar esta función, contacta al soporte o habilita el backend en la configuración.',
-      [
-        { 
-          text: 'Entrada Manual',
-          onPress: () => {
-            setExtractedData({
-              origin: '',
-              destination: '',
-              company: '',
-              price: '',
-              date: new Date().toISOString().split('T')[0],
-              observations: '',
-            });
-            setEditOrigin('');
-            setEditDestination('');
-            setEditCompany('');
-            setEditPrice('');
-            setEditDate(new Date().toISOString().split('T')[0]);
-            setEditObservations('');
-            setEditDiscount('0');
-            setIsConfirming(true);
-          },
-        },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
-  };
 
-  const handlePickImage = async () => {
-    await extractDataFromImage('');
-  };
-
-  const handleTakePhoto = async () => {
-    await extractDataFromImage('');
-  };
 
   const handleConfirm = async () => {
     const activeCycle = getActiveCycle();
@@ -341,21 +302,21 @@ export default function ScanServiceScreen() {
           </View>
 
           <View style={styles.actionsContainer}>
-            <TouchableOpacity style={[styles.actionButton, styles.disabledButton]} onPress={handleTakePhoto}>
+            <View style={[styles.actionButton, styles.disabledButton]}>
               <View style={[styles.actionButtonIcon, styles.disabledIcon]}>
                 <Camera size={32} color="#9CA3AF" />
               </View>
               <Text style={[styles.actionButtonText, styles.disabledText]}>Tomar Foto</Text>
               <Text style={styles.actionButtonSubtext}>Requiere backend habilitado</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity style={[styles.actionButton, styles.disabledButton]} onPress={handlePickImage}>
+            <View style={[styles.actionButton, styles.disabledButton]}>
               <View style={[styles.actionButtonIcon, styles.disabledIcon]}>
                 <Upload size={32} color="#9CA3AF" />
               </View>
               <Text style={[styles.actionButtonText, styles.disabledText]}>Seleccionar Imagen</Text>
               <Text style={styles.actionButtonSubtext}>Requiere backend habilitado</Text>
-            </TouchableOpacity>
+            </View>
 
             <TouchableOpacity 
               style={[styles.actionButton, styles.manualButton]} 
