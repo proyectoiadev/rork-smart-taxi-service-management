@@ -121,6 +121,9 @@ Responde ÚNICAMENTE en formato JSON válido:
   "abn": "número ABN si está visible"
 }`;
 
+      console.log('Calling generateText API...');
+      console.log('Image base64 prefix:', base64Image.substring(0, 50));
+      
       const result = await generateText({
         messages: [
           {
@@ -133,10 +136,12 @@ Responde ÚNICAMENTE en formato JSON válido:
         ],
       });
 
-      console.log('AI Response:', result);
+      console.log('AI Response received');
+      console.log('Response:', result);
 
       const jsonMatch = result.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('No JSON found in response:', result);
         throw new Error('No se pudo extraer JSON de la respuesta');
       }
 
@@ -155,9 +160,13 @@ Responde ÚNICAMENTE en formato JSON válido:
       setIsConfirming(true);
     } catch (error) {
       console.error('Error extracting data:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error type:', error instanceof TypeError ? 'TypeError' : typeof error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      
       Alert.alert(
         'Error',
-        'No se pudo extraer los datos de la imagen. Por favor, intenta con otra imagen o introduce los datos manualmente.'
+        `No se pudo extraer los datos: ${errorMessage}. Por favor, verifica tu conexión a internet e intenta nuevamente.`
       );
     } finally {
       setIsProcessing(false);
