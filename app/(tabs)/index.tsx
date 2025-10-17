@@ -14,12 +14,13 @@ import {
   Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Trash2, Plus, Edit2, Calendar, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Trash2, Plus, Edit2, Calendar, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ScanLine } from 'lucide-react-native';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServices, Service, PaymentMethod } from '@/contexts/ServicesContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
 import VoiceInput, { VoiceButton } from '@/components/VoiceInput';
+import TicketScanner from '@/components/TicketScanner';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -52,6 +53,7 @@ export default function HomeScreen() {
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [isAddServiceExpanded, setIsAddServiceExpanded] = useState(true);
+  const [showTicketScanner, setShowTicketScanner] = useState(false);
 
   useEffect(() => {
     if (paymentMethod === 'Abonado' && clientName) {
@@ -311,6 +313,18 @@ export default function HomeScreen() {
   const handleCancelEdit = () => {
     setShowEditModal(false);
     setEditingService(null);
+  };
+
+  const handleServicesExtracted = async (services: Omit<Service, 'id'>[]) => {
+    try {
+      for (const service of services) {
+        await addService(service);
+      }
+      Alert.alert('Éxito', `${services.length} servicio(s) añadido(s) correctamente`);
+    } catch (error) {
+      console.error('Error adding scanned services:', error);
+      Alert.alert('Error', 'No se pudieron añadir algunos servicios');
+    }
   };
 
   const sortedServices = [...services].sort((a, b) => 
@@ -800,10 +814,17 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.addButton} onPress={handleSubmit}>
-                <Plus size={20} color="#FFFFFF" />
-                <Text style={styles.addButtonText}>Añadir Servicio</Text>
-              </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.scanButton} onPress={() => setShowTicketScanner(true)}>
+                  <ScanLine size={20} color="#4CAF50" />
+                  <Text style={styles.scanButtonText}>Escanear</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.addButton} onPress={handleSubmit}>
+                  <Plus size={20} color="#FFFFFF" />
+                  <Text style={styles.addButtonText}>Añadir</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             )}
           </View>
@@ -1146,6 +1167,12 @@ export default function HomeScreen() {
             </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <TicketScanner
+        visible={showTicketScanner}
+        onClose={() => setShowTicketScanner(false)}
+        onServicesExtracted={handleServicesExtracted}
+      />
     </View>
   );
 }
@@ -1344,7 +1371,29 @@ const styles = StyleSheet.create({
     right: 4,
     top: 4,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  scanButton: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    height: 48,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  scanButtonText: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
   addButton: {
+    flex: 1,
     backgroundColor: '#4CAF50',
     height: 48,
     borderRadius: 8,
