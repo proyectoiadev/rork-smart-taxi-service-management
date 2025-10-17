@@ -238,14 +238,15 @@ export default function HomeScreen() {
   };
 
   const handleEdit = (service: Service) => {
+    console.log('handleEdit service:', service);
     setEditingService(service);
-    setEditDate(service.date);
-    setEditOrigin(service.origin);
-    setEditDestination(service.destination);
-    setEditCompany(service.company);
-    setEditPrice(service.price);
-    setEditDiscountPercent(service.discountPercent);
-    setEditObservations(service.observations);
+    setEditDate(service.date || '');
+    setEditOrigin(String(service.origin || ''));
+    setEditDestination(String(service.destination || ''));
+    setEditCompany(String(service.company || ''));
+    setEditPrice(String(service.price || ''));
+    setEditDiscountPercent(String(service.discountPercent || '0'));
+    setEditObservations(String(service.observations || ''));
     setEditPaymentMethod(service.paymentMethod);
     setEditClientName(service.clientName || '');
     setShowEditModal(true);
@@ -294,15 +295,15 @@ export default function HomeScreen() {
       const billingCycleId = editPaymentMethod === 'Abonado' && activeCycle ? activeCycle.id : undefined;
 
       const updateData = {
-        date: editDate,
-        origin: editPaymentMethod === 'Abonado' ? editOrigin : '',
-        destination: editPaymentMethod === 'Abonado' ? editDestination : '',
-        company: editPaymentMethod === 'Abonado' ? editCompany : '',
-        price: editPrice,
-        discountPercent: editPaymentMethod === 'Abonado' ? editDiscountPercent : '0',
-        observations: editPaymentMethod === 'Abonado' ? editObservations : '',
+        date: String(editDate || ''),
+        origin: editPaymentMethod === 'Abonado' ? String(editOrigin || '') : '',
+        destination: editPaymentMethod === 'Abonado' ? String(editDestination || '') : '',
+        company: editPaymentMethod === 'Abonado' ? String(editCompany || '') : '',
+        price: String(editPrice || ''),
+        discountPercent: editPaymentMethod === 'Abonado' ? String(editDiscountPercent || '0') : '0',
+        observations: editPaymentMethod === 'Abonado' ? String(editObservations || '') : '',
         paymentMethod: editPaymentMethod,
-        clientName: editPaymentMethod === 'Abonado' ? editClientName : undefined,
+        clientName: editPaymentMethod === 'Abonado' ? String(editClientName || '') : undefined,
         clientId: undefined,
         clientPhone: undefined,
       };
