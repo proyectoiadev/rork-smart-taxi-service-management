@@ -106,7 +106,8 @@ export default function GenerateHTMLScreen() {
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
 
-      const formattedDiscountPercent = discountPercent > 0 ? String(discountPercent) : '0';
+      // Mantener el porcentaje original sin redondear
+      const displayDiscount = service.discountPercent ? String(service.discountPercent) : '0';
       
       return `
         <tr>
@@ -114,7 +115,7 @@ export default function GenerateHTMLScreen() {
           <td style="color: #374151;">${service.origin} → ${service.destination}</td>
           <td style="color: #374151; padding-left: 8px;">${service.company}</td>
           <td style="text-align: right; color: #374151; white-space: nowrap;">${price.toFixed(2)}&nbsp;€</td>
-          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'}; white-space: nowrap;">${discountPercent > 0 ? `-${formattedDiscountPercent}%` : '-'}</td>
+          <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'}; white-space: nowrap;">${discountPercent > 0 ? `-${displayDiscount}%` : '-'}</td>
           <td style="text-align: right; color: #4caf50; font-weight: 700; white-space: nowrap;">${finalPrice.toFixed(2)}&nbsp;€</td>
         </tr>
         ${service.observations ? `
