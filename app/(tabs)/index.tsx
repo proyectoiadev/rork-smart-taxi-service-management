@@ -222,7 +222,7 @@ export default function HomeScreen() {
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     Alert.alert(
       'Confirmar eliminación',
       '¿Estás seguro de que quieres eliminar este servicio?',
@@ -231,7 +231,17 @@ export default function HomeScreen() {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => deleteService(id),
+          onPress: async () => {
+            try {
+              console.log('Deleting service with id:', id);
+              await deleteService(id);
+              console.log('Service deleted successfully');
+              Alert.alert('Éxito', 'Servicio eliminado correctamente');
+            } catch (error) {
+              console.error('Error deleting service:', error);
+              Alert.alert('Error', 'No se pudo eliminar el servicio');
+            }
+          },
         },
       ]
     );
