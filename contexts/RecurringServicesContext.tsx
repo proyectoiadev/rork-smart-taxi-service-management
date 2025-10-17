@@ -276,7 +276,7 @@ export const [RecurringServicesProvider, useRecurringServices] = createContextHo
     });
   }, [companyDiscounts]);
 
-  return useMemo(() => ({
+  return {
     routes: sortedRoutes,
     companyDiscounts: sortedCompanyDiscounts,
     companyRoutePreferences,
@@ -288,17 +288,5 @@ export const [RecurringServicesProvider, useRecurringServices] = createContextHo
     getCompanyRoutes,
     getOriginSuggestions,
     getDestinationSuggestions,
-  }), [
-    sortedRoutes,
-    sortedCompanyDiscounts,
-    companyRoutePreferences,
-    isLoading,
-    recordService,
-    getCompanyDiscount,
-    getRoutePrice,
-    getCompanyRoutePreference,
-    getCompanyRoutes,
-    getOriginSuggestions,
-    getDestinationSuggestions,
-  ]);
+  };
 });

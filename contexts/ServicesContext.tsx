@@ -129,7 +129,7 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     }, { totalPrice: 0, totalDiscount: 0, totalFinal: 0 });
   }, [services]);
 
-  return useMemo(() => ({
+  return {
     services,
     currentMonth,
     isLoading,
@@ -140,5 +140,5 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     changeMonth,
     getAllServicesForYear,
     getServicesByCycle,
-  }), [services, currentMonth, isLoading, totals, addService, deleteService, updateService, changeMonth, getAllServicesForYear, getServicesByCycle]);
+  };
 });
