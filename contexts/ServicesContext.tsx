@@ -51,7 +51,7 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     }
   };
 
-  const saveServices = async (month: number, updatedServices: Service[]) => {
+  const saveServices = useCallback(async (month: number, updatedServices: Service[]) => {
     try {
       const key = getStorageKey(CURRENT_YEAR, month);
       await AsyncStorage.setItem(key, JSON.stringify(updatedServices));
@@ -59,7 +59,7 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
       console.error('Error saving services:', error);
       throw error;
     }
-  };
+  }, []);
 
   const addService = useCallback(async (service: Omit<Service, 'id'>, billingCycleId?: string) => {
     const newService: Service = {
@@ -70,13 +70,17 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     const updatedServices = [...services, newService];
     setServices(updatedServices);
     await saveServices(currentMonth, updatedServices);
-  }, [services, currentMonth]);
+  }, [services, currentMonth, saveServices]);
 
   const deleteService = useCallback(async (id: number) => {
+    console.log('deleteService called with id:', id);
+    console.log('Current services:', services.length);
     const updatedServices = services.filter(s => s.id !== id);
+    console.log('Updated services after filter:', updatedServices.length);
     setServices(updatedServices);
     await saveServices(currentMonth, updatedServices);
-  }, [services, currentMonth]);
+    console.log('Services deleted and saved successfully');
+  }, [services, currentMonth, saveServices]);
 
   const updateService = useCallback(async (id: number, updatedData: Partial<Omit<Service, 'id'>>) => {
     const updatedServices = services.map(s => 
@@ -84,7 +88,7 @@ export const [ServicesProvider, useServices] = createContextHook(() => {
     );
     setServices(updatedServices);
     await saveServices(currentMonth, updatedServices);
-  }, [services, currentMonth]);
+  }, [services, currentMonth, saveServices]);
 
   const changeMonth = useCallback((month: number) => {
     setCurrentMonth(month);
