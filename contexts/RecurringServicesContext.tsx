@@ -86,6 +86,18 @@ export const [RecurringServicesProvider, useRecurringServices] = createContextHo
     }
   };
 
+  const sortedRoutes = useMemo(() => {
+    return [...routes].sort((a, b) => {
+      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
+    });
+  }, [routes]);
+
+  const sortedCompanyDiscounts = useMemo(() => {
+    return [...companyDiscounts].sort((a, b) => {
+      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
+    });
+  }, [companyDiscounts]);
+
   const recordService = useCallback(async (data: {
     companyName: string;
     origin: string;
@@ -263,18 +275,6 @@ export const [RecurringServicesProvider, useRecurringServices] = createContextHo
     const destinations = [...new Set(filtered.map(r => r.destination))];
     return destinations.slice(0, 5);
   }, [getCompanyRoutes]);
-
-  const sortedRoutes = useMemo(() => {
-    return [...routes].sort((a, b) => {
-      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
-    });
-  }, [routes]);
-
-  const sortedCompanyDiscounts = useMemo(() => {
-    return [...companyDiscounts].sort((a, b) => {
-      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
-    });
-  }, [companyDiscounts]);
 
   return {
     routes: sortedRoutes,
