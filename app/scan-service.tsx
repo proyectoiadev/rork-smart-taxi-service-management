@@ -105,6 +105,10 @@ export default function ScanServiceScreen() {
     setIsProcessing(true);
 
     try {
+      if (!process.env.EXPO_PUBLIC_TOOLKIT_URL) {
+        throw new Error('La función de IA no está configurada. Por favor, contacta al soporte o usa la entrada manual.');
+      }
+
       console.log('Image URI:', imageUri);
       
       const base64Image = await convertImageToBase64(imageUri);
@@ -166,16 +170,53 @@ export default function ScanServiceScreen() {
       console.log('Data extraction completed successfully');
     } catch (error) {
       console.error('Error extracting data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('Error type:', typeof error);
-      console.error('Error name:', error instanceof Error ? error.name : 'N/A');
-      console.error('Error message:', errorMessage);
-      console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
+      
+      let errorMessage = 'Error desconocido';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
+          errorMessage = 'No se pudo conectar al servicio de IA. Verifica tu conexión a internet o usa la entrada manual.';
+        } else if (error.message.includes('IA no está configurada')) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      console.error('Error details:', {
+        type: typeof error,
+        name: error instanceof Error ? error.name : 'N/A',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : 'N/A',
+      });
       
       Alert.alert(
         'Error al Extraer Datos',
-        `No se pudo procesar la imagen automáticamente. ${errorMessage}\n\nPuedes ingresar los datos manualmente usando el botón "Entrada Manual".`,
-        [{ text: 'Entendido' }]
+        `${errorMessage}\n\nPuedes ingresar los datos manualmente usando el botón "Entrada Manual".`,
+        [
+          { 
+            text: 'Entrada Manual',
+            onPress: () => {
+              setExtractedData({
+                origin: '',
+                destination: '',
+                company: '',
+                price: '',
+                date: new Date().toISOString().split('T')[0],
+                observations: '',
+              });
+              setEditOrigin('');
+              setEditDestination('');
+              setEditCompany('');
+              setEditPrice('');
+              setEditDate(new Date().toISOString().split('T')[0]);
+              setEditObservations('');
+              setEditDiscount('0');
+              setIsConfirming(true);
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
       );
     } finally {
       setIsProcessing(false);
