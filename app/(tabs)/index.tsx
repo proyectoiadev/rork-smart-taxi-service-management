@@ -268,14 +268,14 @@ export default function HomeScreen() {
       }
     }
 
+    if (!editPrice) {
+      Alert.alert('Error', 'Por favor, completa el campo precio');
+      return;
+    }
+
     if (editPaymentMethod === 'Abonado') {
-      if (!editOrigin || !editDestination || !editCompany || !editPrice) {
-        Alert.alert('Error', 'Por favor, completa todos los campos requeridos');
-        return;
-      }
-    } else {
-      if (!editPrice) {
-        Alert.alert('Error', 'Por favor, completa el campo precio');
+      if (!editOrigin || !editDestination) {
+        Alert.alert('Error', 'Por favor, completa origen y destino para servicios de abonados');
         return;
       }
     }
@@ -918,7 +918,7 @@ export default function HomeScreen() {
                     <View>
                       <Text style={styles.serviceCardPrice}>Precio: €{price.toFixed(2)}</Text>
                       {discountAmount > 0 && (
-                        <Text style={styles.serviceCardDiscount}>-{parseFloat(service.discountPercent).toFixed(2)}%</Text>
+                        <Text style={styles.serviceCardDiscount}>-{service.discountPercent}%</Text>
                       )}
                     </View>
                     <Text style={styles.serviceCardTotal}>Total: €{finalPrice.toFixed(2)}</Text>
