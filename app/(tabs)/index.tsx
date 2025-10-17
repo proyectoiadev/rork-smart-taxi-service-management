@@ -956,6 +956,49 @@ export default function HomeScreen() {
 
               <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={true}>
                 <View style={styles.modalField}>
+                  <Text style={styles.modalLabel}>Método de Pago</Text>
+                  <TouchableOpacity
+                    style={styles.paymentMethodButton}
+                    onPress={() => setShowEditPaymentPicker(!showEditPaymentPicker)}
+                  >
+                    <Text style={styles.paymentMethodText}>{editPaymentMethod}</Text>
+                    <ChevronRight size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                  {showEditPaymentPicker && (
+                    <View style={styles.paymentMethodPicker}>
+                      {(['Tarjeta', 'Efectivo', 'Amex', 'Abonado'] as PaymentMethod[]).map((method) => (
+                        <TouchableOpacity
+                          key={method}
+                          style={[
+                            styles.paymentMethodOption,
+                            editPaymentMethod === method && styles.paymentMethodOptionSelected,
+                          ]}
+                          onPress={() => {
+                            setEditPaymentMethod(method);
+                            setShowEditPaymentPicker(false);
+                            if (method !== 'Abonado') {
+                              setEditClientName('');
+                              setEditDiscountPercent('0');
+                              setEditOrigin('');
+                              setEditDestination('');
+                            }
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.paymentMethodOptionText,
+                              editPaymentMethod === method && styles.paymentMethodOptionTextSelected,
+                            ]}
+                          >
+                            {method}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.modalField}>
                   <Text style={styles.modalLabel}>Fecha del Servicio</Text>
                   <TouchableOpacity
                     style={styles.dateInputWrapper}
@@ -1082,49 +1125,6 @@ export default function HomeScreen() {
                           <VoiceButton onResult={setEditDiscountPercent} numericOnly />
                         </View>
                       </View>
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.modalField}>
-                  <Text style={styles.modalLabel}>Método de Pago</Text>
-                  <TouchableOpacity
-                    style={styles.paymentMethodButton}
-                    onPress={() => setShowEditPaymentPicker(!showEditPaymentPicker)}
-                  >
-                    <Text style={styles.paymentMethodText}>{editPaymentMethod}</Text>
-                    <ChevronRight size={20} color="#6B7280" />
-                  </TouchableOpacity>
-                  {showEditPaymentPicker && (
-                    <View style={styles.paymentMethodPicker}>
-                      {(['Tarjeta', 'Efectivo', 'Amex', 'Abonado'] as PaymentMethod[]).map((method) => (
-                        <TouchableOpacity
-                          key={method}
-                          style={[
-                            styles.paymentMethodOption,
-                            editPaymentMethod === method && styles.paymentMethodOptionSelected,
-                          ]}
-                          onPress={() => {
-                            setEditPaymentMethod(method);
-                            setShowEditPaymentPicker(false);
-                            if (method !== 'Abonado') {
-                              setEditClientName('');
-                              setEditDiscountPercent('0');
-                              setEditOrigin('');
-                              setEditDestination('');
-                            }
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.paymentMethodOptionText,
-                              editPaymentMethod === method && styles.paymentMethodOptionTextSelected,
-                            ]}
-                          >
-                            {method}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
                     </View>
                   )}
                 </View>

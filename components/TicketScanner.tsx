@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -21,7 +22,6 @@ interface ExtractedTicketData {
   origin: string;
   destination: string;
   company: string;
-  price: string;
   observations: string;
 }
 
@@ -37,6 +37,7 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedTicketData[]>([]);
+  const [priceInput, setPriceInput] = useState('');
   const cameraRef = useRef<CameraView>(null);
 
   const handleTakePicture = async () => {
@@ -102,7 +103,6 @@ FORMATO DE RESPUESTA (IMPORTANTE: Devuelve SOLO el JSON, sin texto adicional):
       "origin": "ubicación de origen",
       "destination": "ubicación de destino",
       "company": "nombre de la empresa/cooperativa",
-      "price": "precio en formato decimal (ej: 12.50)",
       "observations": "cualquier observación relevante del ticket"
     }
   ]
@@ -113,7 +113,8 @@ INSTRUCCIONES:
 - Extrae ORIGEN del campo "-RECOGIDA:" o similar
 - Extrae DESTINO del campo "-DESTINO:" o similar  
 - Extrae COMPANY del campo "-NOMBRE:" o similar
-- El precio debe estar en formato decimal (ej: "12.50")
+- IMPORTANTE: NO extraigas el precio, el usuario lo ingresará manualmente
+- Extrae observaciones relevantes del ticket (si las hay)
 - Si no encuentras un campo, usa cadena vacía ""
 - Si hay múltiples servicios, añádelos al array "services"
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
@@ -226,12 +227,17 @@ INSTRUCCIONES:
       return;
     }
 
+    if (!priceInput || parseFloat(priceInput) <= 0) {
+      Alert.alert('Error', 'Por favor, ingresa el importe del servicio');
+      return;
+    }
+
     const services: Omit<Service, 'id'>[] = extractedData.map(data => ({
       date: data.date || new Date().toISOString().split('T')[0],
       origin: data.origin || '',
       destination: data.destination || '',
       company: data.company || '',
-      price: data.price || '0',
+      price: priceInput,
       discountPercent: '0',
       observations: data.observations || '',
       paymentMethod: 'Tarjeta',
@@ -246,6 +252,7 @@ INSTRUCCIONES:
     setCapturedImage(null);
     setExtractedData([]);
     setShowCamera(false);
+    setPriceInput('');
   };
 
   const handleOpenCamera = async () => {
@@ -389,11 +396,6 @@ INSTRUCCIONES:
                         <Text style={styles.dataValue}>{data.company || 'No detectada'}</Text>
                       </View>
 
-                      <View style={styles.dataRow}>
-                        <Text style={styles.dataLabel}>Precio:</Text>
-                        <Text style={styles.dataValue}>€{data.price || '0.00'}</Text>
-                      </View>
-
                       {data.observations && (
                         <View style={styles.dataRow}>
                           <Text style={styles.dataLabel}>Observaciones:</Text>
@@ -402,6 +404,18 @@ INSTRUCCIONES:
                       )}
                     </View>
                   ))}
+
+                  <View style={styles.priceInputSection}>
+                    <Text style={styles.priceInputLabel}>Importe del Servicio (€) *</Text>
+                    <TextInput
+                      style={styles.priceInputField}
+                      value={priceInput}
+                      onChangeText={setPriceInput}
+                      placeholder="Ingresa el importe"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="numeric"
+                    />
+                  </View>
 
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
@@ -651,5 +665,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+  },
+  priceInputSection: {
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  priceInputLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#111827',
+    marginBottom: 8,
+  },
+  priceInputField: {
+    height: 48,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: '#111827',
   },
 });
