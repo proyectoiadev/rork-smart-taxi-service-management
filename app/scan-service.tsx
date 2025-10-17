@@ -60,25 +60,46 @@ export default function ScanServiceScreen() {
   };
 
   const convertImageToBase64 = async (uri: string): Promise<string> => {
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result as string;
-          resolve(base64.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } else {
-      const FileSystem = await import('expo-file-system');
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      return base64;
+    try {
+      if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        const FileSystem = await import('expo-file-system');
+        const base64 = await FileSystem.default.readAsStringAsync(uri, {
+          encoding: FileSystem.default.EncodingType.Base64,
+        });
+        return base64;
+      }
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      throw new Error('No se pudo convertir la imagen');
     }
+  };
+
+  const extractJSONFromText = (text: string): string | null => {
+    // Busca el primer objeto JSON válido en el texto
+    const jsonMatch = text.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
+    return jsonMatch ? jsonMatch[0] : null;
+  };
+
+  const validateDate = (dateString: string): string => {
+    // Valida formato YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateString)) {
+      return new Date().toISOString().split('T')[0];
+    }
+    return dateString;
   };
 
   const extractDataFromImage = async (imageUri: string) => {
@@ -96,7 +117,7 @@ Extrae EXACTAMENTE los siguientes datos del texto visible:
 1. ORIGEN: La dirección o lugar de recogida (puede estar después de "RECOGIDA:" o "-RECOGIDA:")
 2. DESTINO: La dirección o lugar de destino (puede estar después de "-DESTINO:")
 3. EMPRESA/CLIENTE: El nombre de la empresa o cliente (puede estar después de "NOMBRE:" o "-NOMBRE:")
-4. PRECIO: NO extraer, dejar vacío (el usuario lo introducirá manualmente)
+4. PRECIO: El precio del servicio si está visible (busca números con €, EUR, o después de "PRECIO:", "IMPORTE:")
 5. FECHA: La fecha del servicio en formato YYYY-MM-DD (busca "FECHA:" o similar)
 6. HORA_RECOGIDA: La hora de recogida si está disponible (busca "HORA RECOGIDA" o similar)
 7. ABN: El número ABN si está visible (busca "ABN:" o similar)
@@ -107,65 +128,57 @@ IMPORTANTE:
 - Si dice "***CREDITO***" o "ABONADO" en observaciones, inclúyelo
 - Si no puedes encontrar algún dato, devuelve un string vacío ""
 - Para direcciones largas, copia el texto completo visible
-- La fecha debe estar en formato YYYY-MM-DD (ejemplo: 2025-10-11)
+- La fecha debe estar en formato YYYY-MM-DD (ejemplo: 2025-10-17)
+- Para el precio, extrae solo el número sin símbolos (ejemplo: si dice "€45.50" devuelve "45.50")
 
-Responde ÚNICAMENTE en formato JSON válido:
+Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o después:
 {
   "origin": "texto exacto del origen",
   "destination": "texto exacto del destino",
   "company": "nombre exacto de la empresa",
-  "price": "",
+  "price": "precio extraído o vacío",
   "date": "YYYY-MM-DD",
   "observations": "texto de observaciones incluyendo CREDITO/ABONADO si aparece",
-  "pickupTime": "HH:MM si está disponible",
-  "abn": "número ABN si está visible"
+  "pickupTime": "HH:MM si está disponible o vacío",
+  "abn": "número ABN si está visible o vacío"
 }`;
 
       console.log('Calling generateText API...');
-      console.log('Image base64 prefix:', base64Image.substring(0, 50));
-      console.log('EXPO_PUBLIC_TOOLKIT_URL:', process.env.EXPO_PUBLIC_TOOLKIT_URL);
       
-      let result: string;
-      try {
-        result = await generateText({
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                { type: 'image', image: base64Image },
-              ],
-            },
-          ],
-        });
-      } catch (fetchError) {
-        console.error('generateText failed, error:', fetchError);
-        console.error('Error details:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
-        
-        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
-          throw new Error('No se pudo conectar con el servicio de IA. Por favor, verifica tu conexión a internet y que estés usando la aplicación en un entorno compatible.');
-        }
-        throw fetchError;
-      }
+      const result = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image', image: base64Image },
+            ],
+          },
+        ],
+      });
 
       console.log('AI Response received');
       console.log('Response:', result);
 
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
+      const jsonString = extractJSONFromText(result);
+      if (!jsonString) {
         console.error('No JSON found in response:', result);
-        throw new Error('No se pudo extraer JSON de la respuesta');
+        throw new Error('No se pudo extraer JSON de la respuesta de IA');
       }
 
-      const extracted: ExtractedData = JSON.parse(jsonMatch[0]);
+      const extracted: ExtractedData = JSON.parse(jsonString);
       console.log('Extracted data:', extracted);
+
+      // Validar y limpiar datos
+      const validatedDate = validateDate(extracted.date || '');
+      const cleanPrice = extracted.price ? extracted.price.replace(/[^0-9.]/g, '') : '';
 
       setExtractedData(extracted);
       setEditOrigin(extracted.origin || '');
       setEditDestination(extracted.destination || '');
       setEditCompany(extracted.company || '');
-      setEditPrice(extracted.price || '');
-      setEditDate(extracted.date || new Date().toISOString().split('T')[0]);
+      setEditPrice(cleanPrice);
+      setEditDate(validatedDate);
       setEditObservations(extracted.observations || '');
       setEditDiscount('0');
 
@@ -177,8 +190,8 @@ Responde ÚNICAMENTE en formato JSON válido:
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       
       Alert.alert(
-        'Error',
-        `No se pudo extraer los datos: ${errorMessage}`
+        'Error en extracción',
+        `No se pudo extraer los datos: ${errorMessage}. Por favor, verifica tu conexión a internet e intenta nuevamente.`
       );
     } finally {
       setIsProcessing(false);
@@ -191,7 +204,7 @@ Responde ÚNICAMENTE en formato JSON válido:
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images' as any,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 1,
       });
@@ -238,8 +251,22 @@ Responde ÚNICAMENTE en formato JSON válido:
       return;
     }
 
-    if (!editOrigin || !editDestination || !editCompany || !editPrice) {
-      Alert.alert('Error', 'Por favor, completa todos los campos requeridos (Origen, Destino, Empresa y Precio)');
+    if (!editOrigin.trim() || !editDestination.trim() || !editCompany.trim() || !editPrice.trim()) {
+      Alert.alert('Campos requeridos', 'Por favor, completa todos los campos requeridos (Origen, Destino, Empresa y Precio)');
+      return;
+    }
+
+    // Validar que el precio sea un número válido
+    const priceNumber = parseFloat(editPrice);
+    if (isNaN(priceNumber) || priceNumber < 0) {
+      Alert.alert('Precio inválido', 'Por favor, introduce un precio válido');
+      return;
+    }
+
+    // Validar que el descuento sea un número válido
+    const discountNumber = parseFloat(editDiscount);
+    if (isNaN(discountNumber) || discountNumber < 0 || discountNumber > 100) {
+      Alert.alert('Descuento inválido', 'Por favor, introduce un descuento válido (0-100)');
       return;
     }
 
@@ -248,17 +275,17 @@ Responde ÚNICAMENTE en formato JSON válido:
       console.log('Starting service registration...');
       console.log('Active cycle:', activeCycle);
 
-      if (editCompany) {
+      if (editCompany.trim()) {
         console.log('Adding/updating client:', editCompany);
         await addOrUpdateClient({
-          companyName: editCompany,
+          companyName: editCompany.trim(),
         });
 
         console.log('Recording recurring service...');
         await recordService({
-          companyName: editCompany,
-          origin: editOrigin,
-          destination: editDestination,
+          companyName: editCompany.trim(),
+          origin: editOrigin.trim(),
+          destination: editDestination.trim(),
           price: editPrice,
           discountPercent: editDiscount,
         });
@@ -267,14 +294,14 @@ Responde ÚNICAMENTE en formato JSON válido:
       console.log('Adding service to cycle...');
       const serviceData = {
         date: editDate,
-        origin: editOrigin,
-        destination: editDestination,
-        company: editCompany,
+        origin: editOrigin.trim(),
+        destination: editDestination.trim(),
+        company: editCompany.trim(),
         price: editPrice,
         discountPercent: editDiscount,
-        observations: editObservations,
+        observations: editObservations.trim(),
         paymentMethod: 'Abonado' as PaymentMethod,
-        clientName: editCompany,
+        clientName: editCompany.trim(),
         clientId: undefined,
         clientPhone: undefined,
       };
@@ -292,8 +319,8 @@ Responde ÚNICAMENTE en formato JSON válido:
       ]);
     } catch (error) {
       console.error('Error saving service:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      Alert.alert('Error', `No se pudo guardar el servicio: ${error}`);
+      const errorDetails = error instanceof Error ? error.message : String(error);
+      Alert.alert('Error al guardar', `No se pudo guardar el servicio: ${errorDetails}`);
     } finally {
       setIsProcessing(false);
     }
@@ -331,8 +358,13 @@ Responde ÚNICAMENTE en formato JSON válido:
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <ScrollView style={styles.flex} contentContainerStyle={styles.confirmContainer}>
+          <ScrollView 
+            style={styles.flex} 
+            contentContainerStyle={styles.confirmContainer}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.confirmCard}>
               <Text style={styles.confirmTitle}>Datos Extraídos</Text>
               <Text style={styles.confirmSubtitle}>Revisa y edita los datos antes de guardar</Text>
@@ -390,7 +422,7 @@ Responde ÚNICAMENTE en formato JSON válido:
                     onChangeText={setEditPrice}
                     placeholder="0.00"
                     placeholderTextColor="#9CA3AF"
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                   />
                 </View>
 
@@ -402,7 +434,7 @@ Responde ÚNICAMENTE en formato JSON válido:
                     onChangeText={setEditDiscount}
                     placeholder="0"
                     placeholderTextColor="#9CA3AF"
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                   />
                 </View>
               </View>
@@ -422,12 +454,20 @@ Responde ÚNICAMENTE en formato JSON válido:
               </View>
 
               <View style={styles.actions}>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={handleCancel}
+                  disabled={isProcessing}
+                >
                   <X size={20} color="#6B7280" />
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+                <TouchableOpacity 
+                  style={[styles.confirmButton, isProcessing && styles.confirmButtonDisabled]} 
+                  onPress={handleConfirm}
+                  disabled={isProcessing}
+                >
                   <Check size={20} color="#FFFFFF" />
                   <Text style={styles.confirmButtonText}>Confirmar y Guardar</Text>
                 </TouchableOpacity>
@@ -445,11 +485,12 @@ Responde ÚNICAMENTE en formato JSON válido:
             <View style={styles.infoList}>
               <Text style={styles.infoListItem}>• Origen y destino</Text>
               <Text style={styles.infoListItem}>• Nombre de la empresa/cliente</Text>
+              <Text style={styles.infoListItem}>• Precio del servicio</Text>
               <Text style={styles.infoListItem}>• Fecha del servicio</Text>
               <Text style={styles.infoListItem}>• Observaciones</Text>
             </View>
             <Text style={styles.infoNote}>
-              Nota: El precio deberás introducirlo manualmente después de la extracción.
+              Nota: Podrás revisar y editar todos los datos antes de guardar.
             </Text>
           </View>
 
@@ -500,7 +541,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: '#111827',
   },
   content: {
@@ -519,7 +560,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 12,
   },
@@ -541,7 +582,7 @@ const styles = StyleSheet.create({
   infoNote: {
     fontSize: 12,
     color: '#9CA3AF',
-    fontStyle: 'italic' as const,
+    fontStyle: 'italic',
     marginTop: 8,
   },
   actionsContainer: {
@@ -571,7 +612,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 16,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 4,
   },
@@ -587,7 +628,7 @@ const styles = StyleSheet.create({
   },
   processingText: {
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: '#111827',
     marginTop: 24,
     marginBottom: 8,
@@ -611,7 +652,7 @@ const styles = StyleSheet.create({
   },
   confirmTitle: {
     fontSize: 20,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 4,
   },
@@ -633,7 +674,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
   },
@@ -670,7 +711,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 15,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: '#6B7280',
   },
   confirmButton: {
@@ -683,9 +724,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  confirmButtonDisabled: {
+    opacity: 0.5,
+  },
   confirmButtonText: {
     fontSize: 15,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
 });
