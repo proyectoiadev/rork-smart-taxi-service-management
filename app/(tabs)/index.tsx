@@ -280,11 +280,6 @@ export default function HomeScreen() {
       }
     }
 
-    if (editPaymentMethod === 'Abonado' && !editClientName) {
-      Alert.alert('Error', 'Para el método "Abonado" debes ingresar el nombre del cliente');
-      return;
-    }
-
     try {
       const activeCycle = getActiveCycle();
       const billingCycleId = editPaymentMethod === 'Abonado' && activeCycle ? activeCycle.id : undefined;
@@ -1128,24 +1123,6 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </View>
-
-                {editPaymentMethod === 'Abonado' && (
-                  <View style={styles.modalField}>
-                    <Text style={styles.modalLabel}>Nombre del Cliente *</Text>
-                    <View style={styles.inputWrapper}>
-                      <TextInput
-                        style={styles.modalInput}
-                        value={editClientName}
-                        onChangeText={setEditClientName}
-                        placeholder="Nombre completo"
-                        placeholderTextColor="#9CA3AF"
-                      />
-                      <View style={styles.voiceButtonContainer}>
-                        <VoiceButton onResult={setEditClientName} />
-                      </View>
-                    </View>
-                  </View>
-                )}
               </ScrollView>
 
               <View style={styles.modalActions}>
