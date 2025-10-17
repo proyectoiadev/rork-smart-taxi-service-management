@@ -107,8 +107,16 @@ export default function ScanServiceScreen() {
     setIsProcessing(true);
 
     try {
+      // Verificar la imagen
+      console.log('Image URI:', imageUri);
+      
       const base64Image = await convertImageToBase64(imageUri);
       console.log('Image converted to base64, length:', base64Image.length);
+
+      // Verificar que la imagen no esté vacía
+      if (!base64Image || base64Image.length < 100) {
+        throw new Error('La imagen no se pudo convertir correctamente');
+      }
 
       const prompt = `Analiza esta imagen de un despacho o ticket de servicio de taxi/transporte.
 
@@ -144,34 +152,39 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
 }`;
 
       console.log('Calling generateText API...');
-      console.log('EXPO_PUBLIC_TOOLKIT_URL:', process.env.EXPO_PUBLIC_TOOLKIT_URL);
+      console.log('Request details:', {
+        messageCount: 1,
+        hasImage: true,
+        imageLength: base64Image.length,
+        promptLength: prompt.length
+      });
       
-      let result: string;
-      try {
-        result = await generateText({
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                { type: 'image', image: base64Image },
-              ],
-            },
-          ],
-        });
-      } catch (fetchError) {
-        console.error('Fetch error details:', fetchError);
-        console.error('Error name:', fetchError instanceof Error ? fetchError.name : 'unknown');
-        console.error('Error message:', fetchError instanceof Error ? fetchError.message : String(fetchError));
-        
-        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
-          throw new Error('No se pudo conectar con el servicio de IA. Verifica tu conexión a internet y que el servicio esté configurado correctamente.');
-        }
-        throw fetchError;
-      }
+      // Llamar a la API con timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 30000)
+      );
+
+      const apiPromise = generateText({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image', image: base64Image },
+            ],
+          },
+        ],
+      });
+
+      const result = await Promise.race([apiPromise, timeoutPromise]) as string;
 
       console.log('AI Response received');
-      console.log('Response:', result);
+      console.log('Response length:', result?.length);
+      console.log('Response preview:', result?.substring(0, 200));
+
+      if (!result) {
+        throw new Error('La respuesta de la IA está vacía');
+      }
 
       const jsonString = extractJSONFromText(result);
       if (!jsonString) {
@@ -179,8 +192,9 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
         throw new Error('No se pudo extraer JSON de la respuesta de IA');
       }
 
+      console.log('Extracted JSON string:', jsonString);
       const extracted: ExtractedData = JSON.parse(jsonString);
-      console.log('Extracted data:', extracted);
+      console.log('Parsed data:', extracted);
 
       // Validar y limpiar datos
       const validatedDate = validateDate(extracted.date || '');
@@ -198,13 +212,31 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       setIsConfirming(true);
     } catch (error) {
       console.error('Error extracting data:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Error type:', error instanceof TypeError ? 'TypeError' : typeof error);
+      console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      
+      let userMessage = 'No se pudo extraer los datos de la imagen.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          userMessage = 'Error de conexión. Verifica tu conexión a internet y que tu API key de Rork esté configurada correctamente.';
+        } else if (error.message.includes('Timeout')) {
+          userMessage = 'La solicitud tardó demasiado. Por favor, intenta nuevamente.';
+        } else if (error.message.includes('JSON')) {
+          userMessage = 'Error al procesar la respuesta. La imagen podría no tener texto legible.';
+        } else {
+          userMessage = `Error: ${error.message}`;
+        }
+      }
       
       Alert.alert(
         'Error en extracción',
-        `No se pudo extraer los datos: ${errorMessage}. Por favor, verifica tu conexión a internet e intenta nuevamente.`
+        userMessage + '\n\nConsejo: Asegúrate de que la imagen sea clara y contenga texto legible.',
+        [
+          { text: 'Entendido' }
+        ]
       );
     } finally {
       setIsProcessing(false);
