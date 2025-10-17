@@ -144,18 +144,31 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
 }`;
 
       console.log('Calling generateText API...');
+      console.log('EXPO_PUBLIC_TOOLKIT_URL:', process.env.EXPO_PUBLIC_TOOLKIT_URL);
       
-      const result = await generateText({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image', image: base64Image },
-            ],
-          },
-        ],
-      });
+      let result: string;
+      try {
+        result = await generateText({
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image', image: base64Image },
+              ],
+            },
+          ],
+        });
+      } catch (fetchError) {
+        console.error('Fetch error details:', fetchError);
+        console.error('Error name:', fetchError instanceof Error ? fetchError.name : 'unknown');
+        console.error('Error message:', fetchError instanceof Error ? fetchError.message : String(fetchError));
+        
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          throw new Error('No se pudo conectar con el servicio de IA. Verifica tu conexión a internet y que el servicio esté configurado correctamente.');
+        }
+        throw fetchError;
+      }
 
       console.log('AI Response received');
       console.log('Response:', result);
