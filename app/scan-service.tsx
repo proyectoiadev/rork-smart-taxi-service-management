@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Upload, Camera, Check, X, Loader2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useServices } from '@/contexts/ServicesContext';
+import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
@@ -224,12 +224,16 @@ Responde ÚNICAMENTE en formato JSON válido:
 
     try {
       setIsProcessing(true);
+      console.log('Starting service registration...');
+      console.log('Active cycle:', activeCycle);
 
       if (editCompany) {
+        console.log('Adding/updating client:', editCompany);
         await addOrUpdateClient({
           companyName: editCompany,
         });
 
+        console.log('Recording recurring service...');
         await recordService({
           companyName: editCompany,
           origin: editOrigin,
@@ -239,22 +243,25 @@ Responde ÚNICAMENTE en formato JSON válido:
         });
       }
 
-      await addService(
-        {
-          date: editDate,
-          origin: editOrigin,
-          destination: editDestination,
-          company: editCompany,
-          price: editPrice,
-          discountPercent: editDiscount,
-          observations: editObservations,
-          paymentMethod: 'Abonado',
-          clientName: editCompany,
-          clientId: undefined,
-          clientPhone: undefined,
-        },
-        activeCycle.id
-      );
+      console.log('Adding service to cycle...');
+      const serviceData = {
+        date: editDate,
+        origin: editOrigin,
+        destination: editDestination,
+        company: editCompany,
+        price: editPrice,
+        discountPercent: editDiscount,
+        observations: editObservations,
+        paymentMethod: 'Abonado' as PaymentMethod,
+        clientName: editCompany,
+        clientId: undefined,
+        clientPhone: undefined,
+      };
+      console.log('Service data:', serviceData);
+      console.log('Billing cycle ID:', activeCycle.id);
+
+      await addService(serviceData, activeCycle.id);
+      console.log('Service added successfully!');
 
       Alert.alert('Éxito', 'Servicio registrado correctamente', [
         {
@@ -264,7 +271,8 @@ Responde ÚNICAMENTE en formato JSON válido:
       ]);
     } catch (error) {
       console.error('Error saving service:', error);
-      Alert.alert('Error', 'No se pudo guardar el servicio');
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      Alert.alert('Error', `No se pudo guardar el servicio: ${error}`);
     } finally {
       setIsProcessing(false);
     }
