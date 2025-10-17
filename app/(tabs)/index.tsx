@@ -275,14 +275,14 @@ export default function HomeScreen() {
       }
     }
 
-    if (!editPrice || editPrice === '') {
+    if (!editPrice || editPrice === '' || editPrice === '0') {
       console.log('Price validation failed');
-      Alert.alert('Error', 'Por favor, completa el campo precio');
+      Alert.alert('Error', 'Por favor, introduce un precio válido');
       return;
     }
 
     if (editPaymentMethod === 'Abonado') {
-      if (!editOrigin || !editDestination) {
+      if (!editOrigin || editOrigin.trim() === '' || !editDestination || editDestination.trim() === '') {
         console.log('Origin/destination validation failed');
         Alert.alert('Error', 'Por favor, completa origen y destino para servicios de abonados');
         return;
@@ -291,21 +291,17 @@ export default function HomeScreen() {
 
     try {
       console.log('Starting update...');
-      const activeCycle = getActiveCycle();
-      const billingCycleId = editPaymentMethod === 'Abonado' && activeCycle ? activeCycle.id : undefined;
-
-      const updateData = {
-        date: String(editDate || ''),
-        origin: editPaymentMethod === 'Abonado' ? String(editOrigin || '') : '',
-        destination: editPaymentMethod === 'Abonado' ? String(editDestination || '') : '',
-        company: editPaymentMethod === 'Abonado' ? String(editCompany || '') : '',
-        price: String(editPrice || ''),
-        discountPercent: editPaymentMethod === 'Abonado' ? String(editDiscountPercent || '0') : '0',
-        observations: editPaymentMethod === 'Abonado' ? String(editObservations || '') : '',
+      
+      const updateData: Partial<Omit<Service, 'id'>> = {
+        date: editDate,
+        origin: editPaymentMethod === 'Abonado' ? editOrigin : '',
+        destination: editPaymentMethod === 'Abonado' ? editDestination : '',
+        company: editPaymentMethod === 'Abonado' ? editCompany : '',
+        price: editPrice,
+        discountPercent: editPaymentMethod === 'Abonado' ? editDiscountPercent : '0',
+        observations: editPaymentMethod === 'Abonado' ? editObservations : '',
         paymentMethod: editPaymentMethod,
-        clientName: editPaymentMethod === 'Abonado' ? String(editClientName || '') : undefined,
-        clientId: undefined,
-        clientPhone: undefined,
+        clientName: editPaymentMethod === 'Abonado' ? editClientName || undefined : undefined,
       };
       
       console.log('Update data:', updateData);
