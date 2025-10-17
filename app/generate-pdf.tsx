@@ -155,7 +155,7 @@ export default function GeneratePDFScreen() {
                         {price.toFixed(2)}€
                       </Text>
                       <Text style={[styles.pdfTableCell, { width: 65, textAlign: 'right' as const, color: discountPercent > 0 ? '#EF4444' : '#6B7280' }]}>
-                        {discountPercent > 0 ? `-${parseFloat(service.discountPercent).toFixed(2)}%` : '-'}
+                        {discountPercent > 0 ? `-${service.discountPercent}%` : '-'}
                       </Text>
                       <Text style={[styles.pdfTableCell, { width: 85, textAlign: 'right' as const, fontWeight: '700' as const, color: '#4CAF50' }]}>
                         {finalPrice.toFixed(2)}€

@@ -43,7 +43,7 @@ export default function ExportCSVScreen() {
           `"${service.destination}"`,
           `"${service.company}"`,
           price.toFixed(2),
-          parseFloat(service.discountPercent).toFixed(2),
+          service.discountPercent,
           discountAmount.toFixed(2),
           finalPrice.toFixed(2),
           `"${service.observations.replace(/"/g, '""')}"`,
