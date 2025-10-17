@@ -18,6 +18,8 @@ import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
+import { generateObject } from '@rork/toolkit-sdk';
+import { z } from 'zod';
 
 
 interface ExtractedData {
@@ -87,11 +89,7 @@ export default function ScanServiceScreen() {
     }
   };
 
-  const extractJSONFromText = (text: string): string | null => {
-    // Busca el primer objeto JSON válido en el texto
-    const jsonMatch = text.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
-    return jsonMatch ? jsonMatch[0] : null;
-  };
+
 
   const validateDate = (dateString: string): string => {
     // Valida formato YYYY-MM-DD
@@ -116,7 +114,27 @@ export default function ScanServiceScreen() {
         throw new Error('La imagen no se pudo convertir correctamente');
       }
 
-      const prompt = `Analiza esta imagen de un despacho o ticket de servicio de taxi/transporte.
+      const extractionSchema = z.object({
+        origin: z.string().describe('La dirección o lugar de recogida exacto'),
+        destination: z.string().describe('La dirección o lugar de destino exacto'),
+        company: z.string().describe('El nombre de la empresa o cliente'),
+        price: z.string().describe('El precio del servicio (solo número, sin símbolos)'),
+        date: z.string().describe('La fecha del servicio en formato YYYY-MM-DD'),
+        observations: z.string().describe('Observaciones o notas adicionales, incluye si dice CREDITO o ABONADO'),
+        pickupTime: z.string().optional().describe('Hora de recogida en formato HH:MM'),
+        abn: z.string().optional().describe('Número ABN si está visible'),
+      });
+
+      console.log('Calling generateObject API...');
+
+      const extracted = await generateObject({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analiza esta imagen de un despacho o ticket de servicio de taxi/transporte.
 
 Extrae EXACTAMENTE los siguientes datos del texto visible:
 
@@ -135,62 +153,18 @@ IMPORTANTE:
 - Si no puedes encontrar algún dato, devuelve un string vacío ""
 - Para direcciones largas, copia el texto completo visible
 - La fecha debe estar en formato YYYY-MM-DD (ejemplo: 2025-10-17)
-- Para el precio, extrae solo el número sin símbolos (ejemplo: si dice "€45.50" devuelve "45.50")
-
-Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o después:
-{
-  "origin": "texto exacto del origen",
-  "destination": "texto exacto del destino",
-  "company": "nombre exacto de la empresa",
-  "price": "precio extraído o vacío",
-  "date": "YYYY-MM-DD",
-  "observations": "texto de observaciones incluyendo CREDITO/ABONADO si aparece",
-  "pickupTime": "HH:MM si está disponible o vacío",
-  "abn": "número ABN si está visible o vacío"
-}`;
-
-      console.log('Calling Image Edit API...');
-
-      const response = await fetch('https://toolkit.rork.com/images/edit/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          images: [
-            {
-              type: 'image',
-              image: base64Image,
-            },
-          ],
-        }),
+- Para el precio, extrae solo el número sin símbolos (ejemplo: si dice "€45.50" devuelve "45.50")`
+              },
+              {
+                type: 'image',
+                image: base64Image,
+              },
+            ],
+          },
+        ],
+        schema: extractionSchema,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('AI Response received:', result);
-
-      if (!result || !result.text) {
-        throw new Error('La respuesta de la IA está vacía o no tiene el formato esperado');
-      }
-
-      const resultText = result.text || '';
-      console.log('Response text:', resultText);
-
-      const jsonString = extractJSONFromText(resultText);
-      if (!jsonString) {
-        console.error('No JSON found in response:', resultText);
-        throw new Error('No se pudo extraer JSON de la respuesta de IA');
-      }
-
-      console.log('Extracted JSON string:', jsonString);
-      const extracted: ExtractedData = JSON.parse(jsonString);
       console.log('Parsed data:', extracted);
 
       const validatedDate = validateDate(extracted.date || '');
@@ -212,10 +186,15 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       let userMessage = 'No se pudo extraer los datos de la imagen.';
       
       if (error instanceof Error) {
+        console.error('Error type:', error.constructor.name);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
         if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
-          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Verifica tu conexión a internet e intenta nuevamente.';
-        } else if (error.message.includes('JSON')) {
-          userMessage = '📄 Error al procesar la imagen\n\nNo se pudo interpretar el contenido. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo\n• La foto tenga buena iluminación';
+          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Verifica tu conexión a internet e intenta nuevamente.\n\nDetalles técnicos: ' + error.message;
+        } else if (error.message.includes('JSON') || error.message.includes('parse')) {
+          userMessage = '📄 Error al procesar la respuesta\n\nNo se pudo interpretar el contenido. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo\n• La foto tenga buena iluminación\n\nDetalles: ' + error.message;
         } else {
           userMessage = `❌ Error: ${error.message}`;
         }
@@ -223,7 +202,7 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       
       Alert.alert(
         'Error en extracción',
-        userMessage + '\n\nConsejo: Asegúrate de que la imagen sea clara y contenga texto legible.',
+        userMessage,
         [
           { text: 'Entendido' }
         ]
