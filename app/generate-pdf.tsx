@@ -138,6 +138,7 @@ export default function GeneratePDFScreen() {
                   const discountPercent = parseFloat(service.discountPercent) || 0;
                   const discountAmount = (price * discountPercent) / 100;
                   const finalPrice = price - discountAmount;
+                  const formattedDiscountPercent = discountPercent > 0 ? String(discountPercent) : '0';
 
                   return (
                     <View key={service.id} style={styles.pdfTableRow}>
@@ -155,7 +156,7 @@ export default function GeneratePDFScreen() {
                         {price.toFixed(2)}€
                       </Text>
                       <Text style={[styles.pdfTableCell, { width: 65, textAlign: 'right' as const, color: discountPercent > 0 ? '#EF4444' : '#6B7280' }]}>
-                        {discountPercent > 0 ? `-${service.discountPercent}%` : '-'}
+                        {discountPercent > 0 ? `-${formattedDiscountPercent}%` : '-'}
                       </Text>
                       <Text style={[styles.pdfTableCell, { width: 85, textAlign: 'right' as const, fontWeight: '700' as const, color: '#4CAF50' }]}>
                         {finalPrice.toFixed(2)}€
