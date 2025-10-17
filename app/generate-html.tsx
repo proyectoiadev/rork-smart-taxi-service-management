@@ -106,7 +106,7 @@ export default function GenerateHTMLScreen() {
       const discountAmount = (price * discountPercent) / 100;
       const finalPrice = price - discountAmount;
 
-      const formattedDiscountPercent = service.discountPercent || '0';
+      const formattedDiscountPercent = discountPercent > 0 ? discountPercent.toFixed(2) : '0';
       
       return `
         <tr>
