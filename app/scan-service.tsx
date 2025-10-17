@@ -160,9 +160,14 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       });
       
       // Llamar a la API con timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 30000)
+      const timeoutPromise = new Promise<string>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 45000)
       );
+
+      // Construir el mensaje con imagen en base64
+      const base64WithPrefix = base64Image.startsWith('data:') 
+        ? base64Image 
+        : `data:image/jpeg;base64,${base64Image}`;
 
       const apiPromise = generateText({
         messages: [
@@ -170,13 +175,13 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image', image: base64Image },
+              { type: 'image', image: base64WithPrefix },
             ],
           },
         ],
       });
 
-      const result = await Promise.race([apiPromise, timeoutPromise]) as string;
+      const result = await Promise.race([apiPromise, timeoutPromise]);
 
       console.log('AI Response received');
       console.log('Response length:', result?.length);
@@ -220,8 +225,8 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       let userMessage = 'No se pudo extraer los datos de la imagen.';
       
       if (error instanceof Error) {
-        if (error.message.includes('fetch') || error.message.includes('network')) {
-          userMessage = 'Error de conexión. Verifica tu conexión a internet y que tu API key de Rork esté configurada correctamente.';
+        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
+          userMessage = 'Error de conexión con el servidor de IA. Esto puede deberse a:\n\n1. Conexión a internet inestable\n2. El servidor de IA no está disponible\n3. Configuración incorrecta\n\nPor favor, verifica tu conexión e intenta nuevamente.';
         } else if (error.message.includes('Timeout')) {
           userMessage = 'La solicitud tardó demasiado. Por favor, intenta nuevamente.';
         } else if (error.message.includes('JSON')) {
