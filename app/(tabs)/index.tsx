@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { router } from 'expo-router';
 import {
   View,
   Text,
@@ -15,7 +14,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Trash2, Plus, Edit2, Calendar, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ScanLine } from 'lucide-react-native';
+import { Trash2, Plus, Edit2, Calendar, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServices, Service, PaymentMethod } from '@/contexts/ServicesContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
@@ -801,16 +800,10 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.scanButton} onPress={() => router.push('/scan-service')}>
-                  <ScanLine size={20} color="#4CAF50" />
-                  <Text style={styles.scanButtonText}>Escanear</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.addButton} onPress={handleSubmit}>
-                  <Plus size={20} color="#FFFFFF" />
-                  <Text style={styles.addButtonText}>Añadir Servicio</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.addButton} onPress={handleSubmit}>
+                <Plus size={20} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Añadir Servicio</Text>
+              </TouchableOpacity>
             </View>
             )}
           </View>
@@ -1351,29 +1344,7 @@ const styles = StyleSheet.create({
     right: 4,
     top: 4,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  scanButton: {
-    flex: 1,
-    backgroundColor: '#E8F5E9',
-    height: 48,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-  },
-  scanButtonText: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: '600' as const,
-  },
   addButton: {
-    flex: 1,
     backgroundColor: '#4CAF50',
     height: 48,
     borderRadius: 8,
