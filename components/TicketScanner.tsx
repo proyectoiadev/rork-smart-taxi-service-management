@@ -85,7 +85,12 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
     try {
       console.log('Starting image processing...');
       console.log('Image data length:', imageBase64.length);
-      console.log('Image data prefix:', imageBase64.substring(0, 50));
+      
+      let cleanedBase64 = imageBase64;
+      if (!imageBase64.startsWith('data:image')) {
+        console.error('Invalid image format - missing data URI prefix');
+        throw new Error('Formato de imagen inválido');
+      }
       
       const prompt = `Analiza este ticket de taxi y extrae la siguiente información en formato JSON. Si hay múltiples servicios en la imagen, devuelve un array con cada uno:
 
@@ -113,7 +118,8 @@ INSTRUCCIONES:
 - Si hay múltiples servicios, añádelos al array "services"
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
 
-      console.log('Calling generateText...');
+      console.log('Calling generateText with Rork SDK...');
+      console.log('Image preview:', cleanedBase64.substring(0, 100));
       
       const textResponse = await generateText({
         messages: [
@@ -121,12 +127,13 @@ INSTRUCCIONES:
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image', image: imageBase64 },
+              { type: 'image', image: cleanedBase64 },
             ],
           },
         ],
       });
       
+      console.log('Successfully received response from AI');
       console.log('Raw response:', textResponse);
       
       let cleanedText = textResponse.trim();
@@ -139,8 +146,10 @@ INSTRUCCIONES:
         const parsed = JSON.parse(cleanedText);
         
         if (parsed.services && Array.isArray(parsed.services)) {
+          console.log('Successfully parsed services:', parsed.services.length);
           setExtractedData(parsed.services);
         } else if (parsed.date) {
+          console.log('Successfully parsed single service');
           setExtractedData([parsed]);
         } else {
           throw new Error('Formato de respuesta inválido');
@@ -152,9 +161,24 @@ INSTRUCCIONES:
       }
     } catch (error) {
       console.error('Error processing image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('Error details:', errorMessage);
-      Alert.alert('Error', `No se pudo procesar la imagen del ticket: ${errorMessage}`);
+      
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        if (error.message.includes('fetch')) {
+          Alert.alert(
+            'Error de Conexión',
+            'No se pudo conectar con el servicio de procesamiento de imágenes. Por favor, verifica tu conexión a internet e intenta de nuevo.'
+          );
+        } else {
+          Alert.alert('Error', `No se pudo procesar la imagen: ${error.message}`);
+        }
+      } else {
+        console.error('Unknown error:', error);
+        Alert.alert('Error', 'Ocurrió un error desconocido al procesar la imagen');
+      }
     } finally {
       setIsProcessing(false);
     }
