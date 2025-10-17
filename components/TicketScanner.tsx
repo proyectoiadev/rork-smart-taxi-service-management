@@ -489,12 +489,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    gap: 12,
   },
   optionButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#4CAF50',
+    marginLeft: 12,
   },
   cameraContainer: {
     flex: 1,
@@ -568,12 +568,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
-    gap: 8,
   },
   successText: {
     fontSize: 14,
     fontWeight: '600' as const,
     color: '#4CAF50',
+    marginLeft: 8,
   },
   dataCard: {
     backgroundColor: '#F9FAFB',
@@ -606,7 +606,6 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 12,
     marginTop: 20,
     marginBottom: 20,
   },
@@ -616,9 +615,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 6,
   },
   retryButton: {
     backgroundColor: '#F3F4F6',
+    marginLeft: 0,
   },
   retryButtonText: {
     fontSize: 16,
@@ -627,6 +628,7 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: '#4CAF50',
+    marginRight: 0,
   },
   confirmButtonText: {
     fontSize: 16,
