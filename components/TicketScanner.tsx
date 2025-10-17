@@ -38,6 +38,7 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedTicketData[]>([]);
   const [priceInput, setPriceInput] = useState('');
+  const [discountInput, setDiscountInput] = useState('');
   const cameraRef = useRef<CameraView>(null);
 
   const handleTakePicture = async () => {
@@ -232,13 +233,24 @@ INSTRUCCIONES:
       return;
     }
 
+    if (!discountInput) {
+      Alert.alert('Error', 'Por favor, ingresa el descuento (usa 0 si no hay descuento)');
+      return;
+    }
+
+    const discount = parseFloat(discountInput);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      Alert.alert('Error', 'El descuento debe ser un número entre 0 y 100');
+      return;
+    }
+
     const services: Omit<Service, 'id'>[] = extractedData.map(data => ({
       date: data.date || new Date().toISOString().split('T')[0],
       origin: data.origin || '',
       destination: data.destination || '',
       company: data.company || '',
       price: priceInput,
-      discountPercent: '0',
+      discountPercent: discountInput,
       observations: data.observations || '',
       paymentMethod: 'Tarjeta',
     }));
@@ -253,6 +265,7 @@ INSTRUCCIONES:
     setExtractedData([]);
     setShowCamera(false);
     setPriceInput('');
+    setDiscountInput('');
   };
 
   const handleOpenCamera = async () => {
@@ -405,16 +418,30 @@ INSTRUCCIONES:
                     </View>
                   ))}
 
-                  <View style={styles.priceInputSection}>
-                    <Text style={styles.priceInputLabel}>Importe del Servicio (€) *</Text>
-                    <TextInput
-                      style={styles.priceInputField}
-                      value={priceInput}
-                      onChangeText={setPriceInput}
-                      placeholder="Ingresa el importe"
-                      placeholderTextColor="#9CA3AF"
-                      keyboardType="numeric"
-                    />
+                  <View style={styles.inputsContainer}>
+                    <View style={styles.priceInputSection}>
+                      <Text style={styles.priceInputLabel}>Importe (€) *</Text>
+                      <TextInput
+                        style={styles.priceInputField}
+                        value={priceInput}
+                        onChangeText={setPriceInput}
+                        placeholder="Ej: 55"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="numeric"
+                      />
+                    </View>
+
+                    <View style={styles.discountInputSection}>
+                      <Text style={styles.discountInputLabel}>Descuento (%) *</Text>
+                      <TextInput
+                        style={styles.discountInputField}
+                        value={discountInput}
+                        onChangeText={setDiscountInput}
+                        placeholder="Ej: 0"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="numeric"
+                      />
+                    </View>
                   </View>
 
                   <View style={styles.actionButtons}>
@@ -666,9 +693,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-  priceInputSection: {
+  inputsContainer: {
+    flexDirection: 'row',
     marginTop: 20,
     marginBottom: 12,
+    gap: 12,
+  },
+  priceInputSection: {
+    flex: 1,
   },
   priceInputLabel: {
     fontSize: 14,
@@ -677,6 +709,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   priceInputField: {
+    height: 48,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: '#111827',
+  },
+  discountInputSection: {
+    flex: 1,
+  },
+  discountInputLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#111827',
+    marginBottom: 8,
+  },
+  discountInputField: {
     height: 48,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
