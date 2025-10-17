@@ -113,7 +113,7 @@ export default function GenerateHTMLScreen() {
           <td style="color: #374151; padding-left: 4px;">${service.company}</td>
           <td style="text-align: right; color: #374151; white-space: nowrap;">${service.price}&nbsp;€</td>
           <td style="text-align: right; color: ${discountPercent > 0 ? '#ef4444' : '#6b7280'}; white-space: nowrap;">${discountPercent > 0 ? `-${service.discountPercent}%` : '-'}</td>
-          <td style="text-align: right; color: #4caf50; font-weight: 700; white-space: nowrap;">${finalPrice.toFixed(2)}&nbsp;€</td>
+          <td style="text-align: right; color: #4caf50; font-weight: 700; white-space: nowrap;">${Math.round(finalPrice * 100) / 100}&nbsp;€</td>
         </tr>
         ${service.observations ? `
         <tr>
