@@ -18,7 +18,7 @@ import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
-import { generateText } from '@rork/toolkit-sdk';
+
 
 interface ExtractedData {
   origin: string;
@@ -107,13 +107,11 @@ export default function ScanServiceScreen() {
     setIsProcessing(true);
 
     try {
-      // Verificar la imagen
       console.log('Image URI:', imageUri);
       
       const base64Image = await convertImageToBase64(imageUri);
       console.log('Image converted to base64, length:', base64Image.length);
 
-      // Verificar que la imagen no esté vacía
       if (!base64Image || base64Image.length < 100) {
         throw new Error('La imagen no se pudo convertir correctamente');
       }
@@ -151,51 +149,43 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
   "abn": "número ABN si está visible o vacío"
 }`;
 
-      console.log('Calling generateText API...');
-      console.log('Request details:', {
-        messageCount: 1,
-        hasImage: true,
-        imageLength: base64Image.length,
-        promptLength: prompt.length
-      });
-      
-      // Llamar a la API con timeout
-      const timeoutPromise = new Promise<string>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 90000)
-      );
+      console.log('Calling Image Edit API...');
 
-      // Construir el mensaje con imagen en base64
-      const base64WithPrefix = base64Image.startsWith('data:') 
-        ? base64Image 
-        : `data:image/jpeg;base64,${base64Image}`;
-
-      console.log('Base64 prefix check:', base64WithPrefix.substring(0, 50));
-
-      const apiPromise = generateText({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image', image: base64WithPrefix },
-            ],
-          },
-        ],
+      const response = await fetch('https://toolkit.rork.com/images/edit/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          images: [
+            {
+              type: 'image',
+              image: base64Image,
+            },
+          ],
+        }),
       });
 
-      const result = await Promise.race([apiPromise, timeoutPromise]);
-
-      console.log('AI Response received');
-      console.log('Response length:', result?.length);
-      console.log('Response preview:', result?.substring(0, 200));
-
-      if (!result) {
-        throw new Error('La respuesta de la IA está vacía');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
       }
 
-      const jsonString = extractJSONFromText(result);
+      const result = await response.json();
+      console.log('AI Response received:', result);
+
+      if (!result || !result.text) {
+        throw new Error('La respuesta de la IA está vacía o no tiene el formato esperado');
+      }
+
+      const resultText = result.text || '';
+      console.log('Response text:', resultText);
+
+      const jsonString = extractJSONFromText(resultText);
       if (!jsonString) {
-        console.error('No JSON found in response:', result);
+        console.error('No JSON found in response:', resultText);
         throw new Error('No se pudo extraer JSON de la respuesta de IA');
       }
 
@@ -203,7 +193,6 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       const extracted: ExtractedData = JSON.parse(jsonString);
       console.log('Parsed data:', extracted);
 
-      // Validar y limpiar datos
       const validatedDate = validateDate(extracted.date || '');
       const cleanPrice = extracted.price ? extracted.price.replace(/[^0-9.]/g, '') : '';
 
@@ -219,20 +208,14 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       setIsConfirming(true);
     } catch (error) {
       console.error('Error extracting data:', error);
-      console.error('Error type:', error instanceof TypeError ? 'TypeError' : typeof error);
-      console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-      console.error('Error message:', error instanceof Error ? error.message : String(error));
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       
       let userMessage = 'No se pudo extraer los datos de la imagen.';
       
       if (error instanceof Error) {
         if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
-          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Esto puede deberse a:\n\n• Conexión a internet inestable\n• El servidor no está disponible temporalmente\n• Configuración de red o CORS incorrecta\n• Estás ejecutando en un entorno de desarrollo sin acceso a la red\n\nPor favor, verifica tu conexión e intenta nuevamente.';
-        } else if (error.message.includes('Timeout')) {
-          userMessage = '⏱️ Tiempo de espera agotado\n\nLa solicitud tardó demasiado en procesarse. Esto puede deberse a una imagen muy grande o una conexión lenta.\n\nSugerencias:\n• Usa una imagen más pequeña\n• Verifica tu conexión a internet\n• Intenta nuevamente';
+          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Verifica tu conexión a internet e intenta nuevamente.';
         } else if (error.message.includes('JSON')) {
-          userMessage = '📄 Error al procesar la imagen\n\nNo se pudo interpretar el contenido de la imagen. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo y sin cortes\n• La foto tenga buena iluminación y enfoque';
+          userMessage = '📄 Error al procesar la imagen\n\nNo se pudo interpretar el contenido. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo\n• La foto tenga buena iluminación';
         } else {
           userMessage = `❌ Error: ${error.message}`;
         }
