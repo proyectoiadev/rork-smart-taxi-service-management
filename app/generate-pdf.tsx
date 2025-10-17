@@ -105,17 +105,17 @@ export default function GeneratePDFScreen() {
             <View style={styles.pdfSummary}>
               <View style={styles.pdfSummaryRow}>
                 <Text style={styles.pdfSummaryLabel}>Total Bruto</Text>
-                <Text style={styles.pdfSummaryValue}>{totals.totalPrice.toFixed(2)} €</Text>
+                <Text style={styles.pdfSummaryValue}>{Math.round(totals.totalPrice * 100) / 100} €</Text>
               </View>
               <View style={styles.pdfSummaryRow}>
                 <Text style={styles.pdfSummaryLabel}>Descuentos</Text>
                 <Text style={[styles.pdfSummaryValue, styles.pdfDiscount]}>
-                  -{totals.totalDiscount.toFixed(2)} €
+                  -{Math.round(totals.totalDiscount * 100) / 100} €
                 </Text>
               </View>
               <View style={[styles.pdfSummaryRow, styles.pdfSummaryRowFinal]}>
                 <Text style={styles.pdfSummaryLabelFinal}>Total a Cobrar</Text>
-                <Text style={styles.pdfSummaryValueFinal}>{totals.totalFinal.toFixed(2)} €</Text>
+                <Text style={styles.pdfSummaryValueFinal}>{Math.round(totals.totalFinal * 100) / 100} €</Text>
               </View>
             </View>
 
