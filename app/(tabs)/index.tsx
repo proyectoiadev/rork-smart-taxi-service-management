@@ -257,6 +257,7 @@ export default function HomeScreen() {
     console.log('editingService:', editingService);
     console.log('editPrice:', editPrice);
     console.log('editPaymentMethod:', editPaymentMethod);
+    console.log('editDiscountPercent:', editDiscountPercent);
     
     if (!editingService) {
       console.log('No editingService, returning');
@@ -275,8 +276,9 @@ export default function HomeScreen() {
       }
     }
 
-    if (!editPrice || editPrice === '' || editPrice === '0') {
-      console.log('Price validation failed');
+    const parsedPrice = parseFloat(editPrice);
+    if (!editPrice || editPrice === '' || editPrice === '0' || isNaN(parsedPrice) || parsedPrice <= 0) {
+      console.log('Price validation failed:', editPrice, parsedPrice);
       Alert.alert('Error', 'Por favor, introduce un precio válido');
       return;
     }
@@ -297,14 +299,14 @@ export default function HomeScreen() {
         origin: editPaymentMethod === 'Abonado' ? editOrigin : '',
         destination: editPaymentMethod === 'Abonado' ? editDestination : '',
         company: editPaymentMethod === 'Abonado' ? editCompany : '',
-        price: editPrice,
+        price: String(parsedPrice.toFixed(2)),
         discountPercent: editPaymentMethod === 'Abonado' ? editDiscountPercent : '0',
         observations: editPaymentMethod === 'Abonado' ? editObservations : '',
         paymentMethod: editPaymentMethod,
         clientName: editPaymentMethod === 'Abonado' ? editClientName || undefined : undefined,
       };
       
-      console.log('Update data:', updateData);
+      console.log('Update data:', JSON.stringify(updateData, null, 2));
       await updateService(editingService.id, updateData);
       console.log('Update completed successfully');
       
