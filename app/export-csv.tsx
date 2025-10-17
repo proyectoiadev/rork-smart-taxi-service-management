@@ -42,7 +42,7 @@ export default function ExportCSVScreen() {
           `"${service.origin}"`,
           `"${service.destination}"`,
           `"${service.company}"`,
-          price.toFixed(2),
+          service.price,
           service.discountPercent,
           discountAmount.toFixed(2),
           finalPrice.toFixed(2),

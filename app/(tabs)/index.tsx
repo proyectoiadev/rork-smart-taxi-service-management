@@ -318,7 +318,7 @@ export default function HomeScreen() {
         origin: editPaymentMethod === 'Abonado' ? editOrigin : '',
         destination: editPaymentMethod === 'Abonado' ? editDestination : '',
         company: editPaymentMethod === 'Abonado' ? editCompany : '',
-        price: String(parsedPrice.toFixed(2)),
+        price: editPrice,
         discountPercent: editPaymentMethod === 'Abonado' ? editDiscountPercent : '0',
         observations: editPaymentMethod === 'Abonado' ? editObservations : '',
         paymentMethod: editPaymentMethod,
@@ -950,9 +950,9 @@ export default function HomeScreen() {
 
                   <View style={styles.serviceCardFooter}>
                     <View>
-                      <Text style={styles.serviceCardPrice}>Precio: €{price.toFixed(2)}</Text>
+                      <Text style={styles.serviceCardPrice}>Precio: €{service.price}</Text>
                       {discountAmount > 0 && (
-                        <Text style={styles.serviceCardDiscount}>-{discountPercent.toFixed(2)}%</Text>
+                        <Text style={styles.serviceCardDiscount}>-{service.discountPercent}%</Text>
                       )}
                     </View>
                     <Text style={styles.serviceCardTotal}>Total: €{finalPrice.toFixed(2)}</Text>
