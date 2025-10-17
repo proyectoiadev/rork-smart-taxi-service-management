@@ -11,15 +11,12 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Upload, Camera, Check, X, Loader2 } from 'lucide-react-native';
+import { ArrowLeft, Upload, Camera, Check, X } from 'lucide-react-native';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
-import { generateObject } from '@rork/toolkit-sdk';
-import { z } from 'zod';
 
 
 interface ExtractedData {
@@ -52,217 +49,45 @@ export default function ScanServiceScreen() {
   const [editObservations, setEditObservations] = useState('');
   const [editDiscount, setEditDiscount] = useState('0');
 
-  const requestPermissions = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permiso requerido', 'Se necesita acceso a la galería para seleccionar imágenes.');
-      return false;
-    }
-    return true;
-  };
-
-  const convertImageToBase64 = async (uri: string): Promise<string> => {
-    try {
-      if (Platform.OS === 'web') {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = reader.result as string;
-            const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
-            resolve(base64Data);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } else {
-        const FileSystem = await import('expo-file-system');
-        const base64 = await FileSystem.default.readAsStringAsync(uri, {
-          encoding: FileSystem.default.EncodingType.Base64,
-        });
-        return base64;
-      }
-    } catch (error) {
-      console.error('Error converting image to base64:', error);
-      throw new Error('No se pudo convertir la imagen');
-    }
-  };
-
-
-
-  const validateDate = (dateString: string): string => {
-    // Valida formato YYYY-MM-DD
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(dateString)) {
-      return new Date().toISOString().split('T')[0];
-    }
-    return dateString;
-  };
-
   const extractDataFromImage = async (imageUri: string) => {
-    console.log('Starting AI extraction from image...');
-    setIsProcessing(true);
-
-    try {
-      if (!process.env.EXPO_PUBLIC_TOOLKIT_URL) {
-        throw new Error('La función de IA no está configurada. Por favor, contacta al soporte o usa la entrada manual.');
-      }
-
-      console.log('Image URI:', imageUri);
-      
-      const base64Image = await convertImageToBase64(imageUri);
-      console.log('Image converted to base64, length:', base64Image.length);
-
-      const schema = z.object({
-        origin: z.string().describe('Dirección completa de origen del servicio de taxi o transporte'),
-        destination: z.string().describe('Dirección completa de destino del servicio de taxi o transporte'),
-        company: z.string().describe('Nombre de la empresa o cliente'),
-        price: z.string().describe('Precio del servicio en euros, solo el número'),
-        date: z.string().describe('Fecha del servicio en formato YYYY-MM-DD'),
-        observations: z.string().describe('Observaciones o notas adicionales del servicio'),
-        discount: z.string().optional().describe('Porcentaje de descuento si existe'),
-      });
-
-      console.log('Calling AI to extract data...');
-      const result = await generateObject({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                image: base64Image,
-              },
-              {
-                type: 'text',
-                text: 'Extrae la información de este despacho de servicio de taxi/transporte. Incluye origen, destino, empresa/cliente, precio, fecha y cualquier observación. Si no encuentras algún dato, deja el campo vacío.',
-              },
-            ],
+    console.log('AI extraction requested for image:', imageUri);
+    
+    Alert.alert(
+      'Función de IA No Disponible',
+      'La extracción automática de datos con IA requiere que el backend esté habilitado. Por favor, ingresa los datos manualmente.\n\nPara habilitar esta función, contacta al soporte o habilita el backend en la configuración.',
+      [
+        { 
+          text: 'Entrada Manual',
+          onPress: () => {
+            setExtractedData({
+              origin: '',
+              destination: '',
+              company: '',
+              price: '',
+              date: new Date().toISOString().split('T')[0],
+              observations: '',
+            });
+            setEditOrigin('');
+            setEditDestination('');
+            setEditCompany('');
+            setEditPrice('');
+            setEditDate(new Date().toISOString().split('T')[0]);
+            setEditObservations('');
+            setEditDiscount('0');
+            setIsConfirming(true);
           },
-        ],
-        schema,
-      });
-
-      console.log('AI extraction result:', result);
-      
-      const validatedDate = validateDate(result.date);
-      
-      setExtractedData({
-        origin: result.origin || '',
-        destination: result.destination || '',
-        company: result.company || '',
-        price: result.price || '',
-        date: validatedDate,
-        observations: result.observations || '',
-      });
-      
-      setEditOrigin(result.origin || '');
-      setEditDestination(result.destination || '');
-      setEditCompany(result.company || '');
-      setEditPrice(result.price || '');
-      setEditDate(validatedDate);
-      setEditObservations(result.observations || '');
-      setEditDiscount(result.discount || '0');
-
-      setIsConfirming(true);
-      
-      console.log('Data extraction completed successfully');
-    } catch (error) {
-      console.error('Error extracting data:', error);
-      
-      let errorMessage = 'Error desconocido';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
-          errorMessage = 'No se pudo conectar al servicio de IA. Verifica tu conexión a internet o usa la entrada manual.';
-        } else if (error.message.includes('IA no está configurada')) {
-          errorMessage = error.message;
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      console.error('Error details:', {
-        type: typeof error,
-        name: error instanceof Error ? error.name : 'N/A',
-        message: errorMessage,
-        stack: error instanceof Error ? error.stack : 'N/A',
-      });
-      
-      Alert.alert(
-        'Error al Extraer Datos',
-        `${errorMessage}\n\nPuedes ingresar los datos manualmente usando el botón "Entrada Manual".`,
-        [
-          { 
-            text: 'Entrada Manual',
-            onPress: () => {
-              setExtractedData({
-                origin: '',
-                destination: '',
-                company: '',
-                price: '',
-                date: new Date().toISOString().split('T')[0],
-                observations: '',
-              });
-              setEditOrigin('');
-              setEditDestination('');
-              setEditCompany('');
-              setEditPrice('');
-              setEditDate(new Date().toISOString().split('T')[0]);
-              setEditObservations('');
-              setEditDiscount('0');
-              setIsConfirming(true);
-            },
-          },
-          { text: 'Cancelar', style: 'cancel' },
-        ]
-      );
-    } finally {
-      setIsProcessing(false);
-    }
+        },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
   };
 
   const handlePickImage = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await extractDataFromImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'No se pudo seleccionar la imagen');
-    }
+    await extractDataFromImage('');
   };
 
   const handleTakePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permiso requerido', 'Se necesita acceso a la cámara para tomar fotos.');
-      return;
-    }
-
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await extractDataFromImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'No se pudo tomar la foto');
-    }
+    await extractDataFromImage('');
   };
 
   const handleConfirm = async () => {
@@ -373,13 +198,7 @@ export default function ScanServiceScreen() {
         <View style={styles.backButton} />
       </View>
 
-      {isProcessing ? (
-        <View style={styles.processingContainer}>
-          <Loader2 size={48} color="#4CAF50" />
-          <Text style={styles.processingText}>Procesando imagen...</Text>
-          <Text style={styles.processingSubtext}>Extrayendo datos del documento</Text>
-        </View>
-      ) : isConfirming && extractedData ? (
+      {isConfirming && extractedData ? (
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -505,7 +324,7 @@ export default function ScanServiceScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Registrar Servicio Rápido</Text>
             <Text style={styles.infoText}>
-              Toma una foto o selecciona una imagen del despacho de servicio. La IA extraerá automáticamente:
+              Registra servicios de forma manual completando el formulario con:
             </Text>
             <View style={styles.infoList}>
               <Text style={styles.infoListItem}>• Origen y destino</Text>
@@ -514,26 +333,28 @@ export default function ScanServiceScreen() {
               <Text style={styles.infoListItem}>• Fecha del servicio</Text>
               <Text style={styles.infoListItem}>• Observaciones</Text>
             </View>
-            <Text style={styles.infoNote}>
-              Nota: Después de la extracción automática podrás revisar y editar los datos antes de guardar. También puedes registrar servicios sin foto usando &quot;Entrada Manual&quot;.
-            </Text>
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                📸 Nota: La extracción automática con IA desde fotos requiere que el backend esté habilitado. Actualmente solo está disponible la entrada manual.
+              </Text>
+            </View>
           </View>
 
           <View style={styles.actionsContainer}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleTakePhoto}>
-              <View style={styles.actionButtonIcon}>
-                <Camera size={32} color="#4CAF50" />
+            <TouchableOpacity style={[styles.actionButton, styles.disabledButton]} onPress={handleTakePhoto}>
+              <View style={[styles.actionButtonIcon, styles.disabledIcon]}>
+                <Camera size={32} color="#9CA3AF" />
               </View>
-              <Text style={styles.actionButtonText}>Tomar Foto</Text>
-              <Text style={styles.actionButtonSubtext}>IA extrae datos automáticamente</Text>
+              <Text style={[styles.actionButtonText, styles.disabledText]}>Tomar Foto</Text>
+              <Text style={styles.actionButtonSubtext}>Requiere backend habilitado</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handlePickImage}>
-              <View style={styles.actionButtonIcon}>
-                <Upload size={32} color="#4CAF50" />
+            <TouchableOpacity style={[styles.actionButton, styles.disabledButton]} onPress={handlePickImage}>
+              <View style={[styles.actionButtonIcon, styles.disabledIcon]}>
+                <Upload size={32} color="#9CA3AF" />
               </View>
-              <Text style={styles.actionButtonText}>Seleccionar Imagen</Text>
-              <Text style={styles.actionButtonSubtext}>IA extrae datos automáticamente</Text>
+              <Text style={[styles.actionButtonText, styles.disabledText]}>Seleccionar Imagen</Text>
+              <Text style={styles.actionButtonSubtext}>Requiere backend habilitado</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -561,7 +382,7 @@ export default function ScanServiceScreen() {
                 <Check size={32} color="#2563EB" />
               </View>
               <Text style={styles.actionButtonText}>Entrada Manual</Text>
-              <Text style={styles.actionButtonSubtext}>Sin foto, solo formulario</Text>
+              <Text style={styles.actionButtonSubtext}>Completa el formulario manualmente</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -673,23 +494,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
   },
-  processingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  processingText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  processingSubtext: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
   confirmContainer: {
     padding: 20,
   },
@@ -790,5 +594,27 @@ const styles = StyleSheet.create({
   },
   manualButtonIcon: {
     backgroundColor: '#DBEAFE',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  disabledIcon: {
+    backgroundColor: '#F3F4F6',
+  },
+  disabledText: {
+    color: '#9CA3AF',
+  },
+  warningBox: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#92400E',
+    lineHeight: 18,
   },
 });
