@@ -39,6 +39,8 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
   const [extractedData, setExtractedData] = useState<ExtractedTicketData[]>([]);
   const [priceInput, setPriceInput] = useState('');
   const [discountInput, setDiscountInput] = useState('');
+  const [editableDate, setEditableDate] = useState('');
+  const [editableDestination, setEditableDestination] = useState('');
   const cameraRef = useRef<CameraView>(null);
 
   const handleTakePicture = async () => {
@@ -186,9 +188,15 @@ INSTRUCCIONES:
         if (parsed.services && Array.isArray(parsed.services)) {
           console.log('Successfully parsed services:', parsed.services.length);
           setExtractedData(parsed.services);
+          if (parsed.services[0]) {
+            setEditableDate(parsed.services[0].date || '');
+            setEditableDestination(parsed.services[0].destination || '');
+          }
         } else if (parsed.date) {
           console.log('Successfully parsed single service');
           setExtractedData([parsed]);
+          setEditableDate(parsed.date || '');
+          setEditableDestination(parsed.destination || '');
         } else {
           throw new Error('Formato de respuesta inválido');
         }
@@ -228,6 +236,16 @@ INSTRUCCIONES:
       return;
     }
 
+    if (!editableDate) {
+      Alert.alert('Error', 'Por favor, ingresa la fecha del servicio');
+      return;
+    }
+
+    if (!editableDestination) {
+      Alert.alert('Error', 'Por favor, ingresa el destino del servicio');
+      return;
+    }
+
     if (!priceInput || parseFloat(priceInput) <= 0) {
       Alert.alert('Error', 'Por favor, ingresa el importe del servicio');
       return;
@@ -245,9 +263,9 @@ INSTRUCCIONES:
     }
 
     const services: Omit<Service, 'id'>[] = extractedData.map(data => ({
-      date: data.date || new Date().toISOString().split('T')[0],
+      date: editableDate,
       origin: data.origin || '',
-      destination: data.destination || '',
+      destination: editableDestination,
       company: data.company || '',
       price: priceInput,
       discountPercent: discountInput,
@@ -266,6 +284,8 @@ INSTRUCCIONES:
     setShowCamera(false);
     setPriceInput('');
     setDiscountInput('');
+    setEditableDate('');
+    setEditableDestination('');
   };
 
   const handleOpenCamera = async () => {
@@ -389,28 +409,40 @@ INSTRUCCIONES:
                     <View key={index} style={styles.dataCard}>
                       <Text style={styles.dataCardTitle}>Servicio {index + 1}</Text>
                       
-                      <View style={styles.dataRow}>
-                        <Text style={styles.dataLabel}>Fecha:</Text>
-                        <Text style={styles.dataValue}>{data.date || 'No detectada'}</Text>
+                      <View style={styles.dataFieldContainer}>
+                        <Text style={styles.dataLabel}>Fecha: *</Text>
+                        <TextInput
+                          style={[styles.dataInput, !editableDate && styles.dataInputMissing]}
+                          value={editableDate}
+                          onChangeText={setEditableDate}
+                          placeholder="YYYY-MM-DD"
+                          placeholderTextColor="#9CA3AF"
+                        />
                       </View>
 
-                      <View style={styles.dataRow}>
+                      <View style={styles.dataFieldContainer}>
                         <Text style={styles.dataLabel}>Origen:</Text>
                         <Text style={styles.dataValue}>{data.origin || 'No detectado'}</Text>
                       </View>
 
-                      <View style={styles.dataRow}>
-                        <Text style={styles.dataLabel}>Destino:</Text>
-                        <Text style={styles.dataValue}>{data.destination || 'No detectado'}</Text>
+                      <View style={styles.dataFieldContainer}>
+                        <Text style={styles.dataLabel}>Destino: *</Text>
+                        <TextInput
+                          style={[styles.dataInput, !editableDestination && styles.dataInputMissing]}
+                          value={editableDestination}
+                          onChangeText={setEditableDestination}
+                          placeholder="Ej: Barcelona"
+                          placeholderTextColor="#9CA3AF"
+                        />
                       </View>
 
-                      <View style={styles.dataRow}>
+                      <View style={styles.dataFieldContainer}>
                         <Text style={styles.dataLabel}>Empresa:</Text>
                         <Text style={styles.dataValue}>{data.company || 'No detectada'}</Text>
                       </View>
 
                       {data.observations && (
-                        <View style={styles.dataRow}>
+                        <View style={styles.dataFieldContainer}>
                           <Text style={styles.dataLabel}>Observaciones:</Text>
                           <Text style={styles.dataValue}>{data.observations}</Text>
                         </View>
@@ -453,10 +485,20 @@ INSTRUCCIONES:
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.actionButton, styles.confirmButton]}
+                      style={[
+                        styles.actionButton,
+                        styles.confirmButton,
+                        (!editableDate || !editableDestination || !priceInput || !discountInput) && styles.confirmButtonDisabled
+                      ]}
                       onPress={handleConfirm}
+                      disabled={!editableDate || !editableDestination || !priceInput || !discountInput}
                     >
-                      <Text style={styles.confirmButtonText}>Confirmar</Text>
+                      <Text style={[
+                        styles.confirmButtonText,
+                        (!editableDate || !editableDestination || !priceInput || !discountInput) && styles.confirmButtonTextDisabled
+                      ]}>
+                        Guardar
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -634,16 +676,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 8,
   },
+  dataFieldContainer: {
+    marginBottom: 12,
+  },
   dataLabel: {
     fontSize: 14,
     fontWeight: '600' as const,
     color: '#6B7280',
-    width: 100,
+    marginBottom: 6,
   },
   dataValue: {
-    flex: 1,
     fontSize: 14,
     color: '#111827',
+  },
+  dataInput: {
+    height: 44,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: '#111827',
+  },
+  dataInputMissing: {
+    borderColor: '#EF4444',
+    borderWidth: 2,
+    backgroundColor: '#FEF2F2',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -671,10 +730,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     marginRight: 0,
   },
+  confirmButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
   confirmButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  confirmButtonTextDisabled: {
+    color: '#D1D5DB',
   },
   errorContainer: {
     alignItems: 'center',
