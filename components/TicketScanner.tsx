@@ -14,7 +14,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Image as ImageIcon, X, Check, AlertCircle } from 'lucide-react-native';
 import { Service } from '@/contexts/ServicesContext';
-import { generateText } from '@rork/toolkit-sdk';
+
 
 interface ExtractedTicketData {
   date: string;
@@ -91,11 +91,7 @@ export default function TicketScanner({ visible, onClose, onServicesExtracted }:
         throw new Error('Formato de imagen inválido');
       }
 
-      if (typeof process !== 'undefined' && process.env && !process.env.EXPO_PUBLIC_TOOLKIT_URL) {
-        console.error('EXPO_PUBLIC_TOOLKIT_URL not configured');
-        throw new Error('La aplicación no está configurada correctamente. Por favor, contacta al soporte.');
-      }
-      
+
       const prompt = `Analiza este ticket de taxi y extrae la siguiente información en formato JSON. Si hay múltiples servicios en la imagen, devuelve un array con cada uno:
 
 FORMATO DE RESPUESTA (IMPORTANTE: Devuelve SOLO el JSON, sin texto adicional):
@@ -122,20 +118,56 @@ INSTRUCCIONES:
 - Si hay múltiples servicios, añádelos al array "services"
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
 
-      console.log('Calling generateText with Rork SDK...');
+      console.log('Calling Gemini API...');
       console.log('Image preview:', imageBase64.substring(0, 100));
       
-      const textResponse = await generateText({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image', image: imageBase64 },
-            ],
+      const base64Data = imageBase64.split(',')[1];
+      
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyAFIHOK7S_okuLeJATDBDwCNJmasOrnOXE',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        ],
-      });
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt },
+                  {
+                    inline_data: {
+                      mime_type: 'image/jpeg',
+                      data: base64Data,
+                    },
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              topK: 32,
+              topP: 1,
+              maxOutputTokens: 2048,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API error:', errorData);
+        throw new Error(`Error de API: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Gemini API response:', data);
+      
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!textResponse) {
+        throw new Error('No se recibió respuesta válida de la API');
+      }
       
       console.log('Successfully received response from AI');
       console.log('Raw response:', textResponse);
@@ -174,7 +206,7 @@ INSTRUCCIONES:
         if (error.message.includes('fetch') || error.message.includes('Network') || error.message.includes('Failed to fetch')) {
           Alert.alert(
             'Error de Conexión',
-            'No se pudo conectar con el servicio de IA. Verifica que:\n\n1. Estás ejecutando la app desde la plataforma Rork\n2. Tienes conexión a internet\n3. La app tiene los permisos necesarios\n\nSi el problema persiste, contacta al soporte.'
+            'No se pudo conectar con el servicio de IA. Verifica que tengas conexión a internet.'
           );
         } else {
           Alert.alert('Error', `No se pudo procesar la imagen: ${error.message}`);
