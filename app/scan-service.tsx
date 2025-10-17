@@ -18,6 +18,8 @@ import { useServices, type PaymentMethod } from '@/contexts/ServicesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRecurringClients } from '@/contexts/RecurringClientsContext';
 import { useRecurringServices } from '@/contexts/RecurringServicesContext';
+import { generateObject } from '@rork/toolkit-sdk';
+import { z } from 'zod';
 
 
 interface ExtractedData {
@@ -99,34 +101,80 @@ export default function ScanServiceScreen() {
   };
 
   const extractDataFromImage = async (imageUri: string) => {
-    console.log('Starting manual entry with image preview...');
+    console.log('Starting AI extraction from image...');
     setIsProcessing(true);
 
     try {
       console.log('Image URI:', imageUri);
       
-      setExtractedData({
-        origin: '',
-        destination: '',
-        company: '',
-        price: '',
-        date: new Date().toISOString().split('T')[0],
-        observations: '',
+      const base64Image = await convertImageToBase64(imageUri);
+      console.log('Image converted to base64, length:', base64Image.length);
+
+      const schema = z.object({
+        origin: z.string().describe('Dirección completa de origen del servicio de taxi o transporte'),
+        destination: z.string().describe('Dirección completa de destino del servicio de taxi o transporte'),
+        company: z.string().describe('Nombre de la empresa o cliente'),
+        price: z.string().describe('Precio del servicio en euros, solo el número'),
+        date: z.string().describe('Fecha del servicio en formato YYYY-MM-DD'),
+        observations: z.string().describe('Observaciones o notas adicionales del servicio'),
+        discount: z.string().optional().describe('Porcentaje de descuento si existe'),
       });
-      setEditOrigin('');
-      setEditDestination('');
-      setEditCompany('');
-      setEditPrice('');
-      setEditDate(new Date().toISOString().split('T')[0]);
-      setEditObservations('');
-      setEditDiscount('0');
+
+      console.log('Calling AI to extract data...');
+      const result = await generateObject({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                image: base64Image,
+              },
+              {
+                type: 'text',
+                text: 'Extrae la información de este despacho de servicio de taxi/transporte. Incluye origen, destino, empresa/cliente, precio, fecha y cualquier observación. Si no encuentras algún dato, deja el campo vacío.',
+              },
+            ],
+          },
+        ],
+        schema,
+      });
+
+      console.log('AI extraction result:', result);
+      
+      const validatedDate = validateDate(result.date);
+      
+      setExtractedData({
+        origin: result.origin || '',
+        destination: result.destination || '',
+        company: result.company || '',
+        price: result.price || '',
+        date: validatedDate,
+        observations: result.observations || '',
+      });
+      
+      setEditOrigin(result.origin || '');
+      setEditDestination(result.destination || '');
+      setEditCompany(result.company || '');
+      setEditPrice(result.price || '');
+      setEditDate(validatedDate);
+      setEditObservations(result.observations || '');
+      setEditDiscount(result.discount || '0');
 
       setIsConfirming(true);
+      
+      console.log('Data extraction completed successfully');
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error('Error extracting data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('Error type:', typeof error);
+      console.error('Error name:', error instanceof Error ? error.name : 'N/A');
+      console.error('Error message:', errorMessage);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
+      
       Alert.alert(
-        'Error',
-        'No se pudo procesar la imagen. Por favor intenta nuevamente.',
+        'Error al Extraer Datos',
+        `No se pudo procesar la imagen automáticamente. ${errorMessage}\n\nPuedes ingresar los datos manualmente usando el botón "Entrada Manual".`,
         [{ text: 'Entendido' }]
       );
     } finally {
@@ -416,7 +464,7 @@ export default function ScanServiceScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Registrar Servicio Rápido</Text>
             <Text style={styles.infoText}>
-              Puedes tomar una foto del despacho de servicio para tenerla como referencia mientras ingresas los datos manualmente:
+              Toma una foto o selecciona una imagen del despacho de servicio. La IA extraerá automáticamente:
             </Text>
             <View style={styles.infoList}>
               <Text style={styles.infoListItem}>• Origen y destino</Text>
@@ -426,7 +474,7 @@ export default function ScanServiceScreen() {
               <Text style={styles.infoListItem}>• Observaciones</Text>
             </View>
             <Text style={styles.infoNote}>
-              Nota: También puedes registrar el servicio directamente sin foto usando el botón &quot;Entrada Manual&quot; abajo.
+              Nota: Después de la extracción automática podrás revisar y editar los datos antes de guardar. También puedes registrar servicios sin foto usando &quot;Entrada Manual&quot;.
             </Text>
           </View>
 
@@ -436,7 +484,7 @@ export default function ScanServiceScreen() {
                 <Camera size={32} color="#4CAF50" />
               </View>
               <Text style={styles.actionButtonText}>Tomar Foto</Text>
-              <Text style={styles.actionButtonSubtext}>Foto de referencia + entrada manual</Text>
+              <Text style={styles.actionButtonSubtext}>IA extrae datos automáticamente</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton} onPress={handlePickImage}>
@@ -444,7 +492,7 @@ export default function ScanServiceScreen() {
                 <Upload size={32} color="#4CAF50" />
               </View>
               <Text style={styles.actionButtonText}>Seleccionar Imagen</Text>
-              <Text style={styles.actionButtonSubtext}>Imagen de referencia + entrada manual</Text>
+              <Text style={styles.actionButtonSubtext}>IA extrae datos automáticamente</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
