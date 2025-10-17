@@ -252,7 +252,13 @@ export default function HomeScreen() {
   };
 
   const handleSaveEdit = async () => {
+    console.log('handleSaveEdit called');
+    console.log('editingService:', editingService);
+    console.log('editPrice:', editPrice);
+    console.log('editPaymentMethod:', editPaymentMethod);
+    
     if (!editingService) {
+      console.log('No editingService, returning');
       return;
     }
     
@@ -268,23 +274,26 @@ export default function HomeScreen() {
       }
     }
 
-    if (!editPrice) {
+    if (!editPrice || editPrice === '') {
+      console.log('Price validation failed');
       Alert.alert('Error', 'Por favor, completa el campo precio');
       return;
     }
 
     if (editPaymentMethod === 'Abonado') {
       if (!editOrigin || !editDestination) {
+        console.log('Origin/destination validation failed');
         Alert.alert('Error', 'Por favor, completa origen y destino para servicios de abonados');
         return;
       }
     }
 
     try {
+      console.log('Starting update...');
       const activeCycle = getActiveCycle();
       const billingCycleId = editPaymentMethod === 'Abonado' && activeCycle ? activeCycle.id : undefined;
 
-      await updateService(editingService.id, {
+      const updateData = {
         date: editDate,
         origin: editPaymentMethod === 'Abonado' ? editOrigin : '',
         destination: editPaymentMethod === 'Abonado' ? editDestination : '',
@@ -296,12 +305,18 @@ export default function HomeScreen() {
         clientName: editPaymentMethod === 'Abonado' ? editClientName : undefined,
         clientId: undefined,
         clientPhone: undefined,
-      });
+      };
+      
+      console.log('Update data:', updateData);
+      await updateService(editingService.id, updateData);
+      console.log('Update completed successfully');
+      
       setShowEditModal(false);
       setEditingService(null);
       Alert.alert('Éxito', 'Servicio actualizado correctamente');
-    } catch {
-      Alert.alert('Error', 'No se pudo actualizar el servicio');
+    } catch (error) {
+      console.error('Error updating service:', error);
+      Alert.alert('Error', 'No se pudo actualizar el servicio: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
   };
 
