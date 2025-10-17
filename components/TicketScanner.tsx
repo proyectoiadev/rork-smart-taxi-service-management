@@ -14,6 +14,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Image as ImageIcon, X, Check, AlertCircle } from 'lucide-react-native';
 import { Service } from '@/contexts/ServicesContext';
+import { generateText } from '@rork/toolkit-sdk';
 
 interface ExtractedTicketData {
   date: string;
@@ -108,53 +109,40 @@ INSTRUCCIONES:
 - Si hay múltiples servicios, añádelos al array "services"
 - IMPORTANTE: Responde SOLO con el JSON, sin markdown ni texto adicional`;
 
-      const response = await fetch('https://toolkit.rork.com/images/edit/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          images: [
-            {
-              type: 'image',
-              image: imageBase64,
-            },
-          ],
-        }),
+      const textResponse = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image', image: imageBase64 },
+            ],
+          },
+        ],
       });
-
-      if (!response.ok) {
-        throw new Error(`Error en la respuesta: ${response.status}`);
-      }
-
-      const data = await response.json();
       
-      if (data.image && data.image.base64Data) {
-        const textResponse = atob(data.image.base64Data);
-        console.log('Raw response:', textResponse);
+      console.log('Raw response:', textResponse);
+      
+      let cleanedText = textResponse.trim();
+      cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+      cleanedText = cleanedText.trim();
+      
+      console.log('Cleaned response:', cleanedText);
+      
+      try {
+        const parsed = JSON.parse(cleanedText);
         
-        let cleanedText = textResponse.trim();
-        cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
-        cleanedText = cleanedText.trim();
-        
-        console.log('Cleaned response:', cleanedText);
-        
-        try {
-          const parsed = JSON.parse(cleanedText);
-          
-          if (parsed.services && Array.isArray(parsed.services)) {
-            setExtractedData(parsed.services);
-          } else if (parsed.date) {
-            setExtractedData([parsed]);
-          } else {
-            throw new Error('Formato de respuesta inválido');
-          }
-        } catch (parseError) {
-          console.error('Error parsing JSON:', parseError);
-          console.error('Text that failed to parse:', cleanedText);
-          Alert.alert('Error', 'No se pudo procesar la información del ticket. Por favor, verifica que la imagen sea clara y contenga un ticket válido.');
+        if (parsed.services && Array.isArray(parsed.services)) {
+          setExtractedData(parsed.services);
+        } else if (parsed.date) {
+          setExtractedData([parsed]);
+        } else {
+          throw new Error('Formato de respuesta inválido');
         }
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+        console.error('Text that failed to parse:', cleanedText);
+        Alert.alert('Error', 'No se pudo procesar la información del ticket. Por favor, verifica que la imagen sea clara y contenga un ticket válido.');
       }
     } catch (error) {
       console.error('Error processing image:', error);
