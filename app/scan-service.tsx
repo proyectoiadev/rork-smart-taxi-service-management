@@ -151,6 +151,14 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
   "abn": "número ABN si está visible o vacío"
 }`;
 
+      // Verificar que la URL del toolkit esté configurada
+      const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
+      console.log('Toolkit URL configured:', !!toolkitUrl);
+      
+      if (!toolkitUrl) {
+        throw new Error('API_NOT_CONFIGURED: La funcionalidad de IA no está configurada. Por favor, contacta al administrador.');
+      }
+
       console.log('Calling generateText API...');
       console.log('Request details:', {
         messageCount: 1,
@@ -161,7 +169,7 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       
       // Llamar a la API con timeout
       const timeoutPromise = new Promise<string>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 45000)
+        setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 60000)
       );
 
       // Construir el mensaje con imagen en base64
@@ -225,14 +233,16 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o des
       let userMessage = 'No se pudo extraer los datos de la imagen.';
       
       if (error instanceof Error) {
-        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
-          userMessage = 'Error de conexión con el servidor de IA. Esto puede deberse a:\n\n1. Conexión a internet inestable\n2. El servidor de IA no está disponible\n3. Configuración incorrecta\n\nPor favor, verifica tu conexión e intenta nuevamente.';
+        if (error.message.includes('API_NOT_CONFIGURED')) {
+          userMessage = '⚠️ Funcionalidad de IA no disponible\n\nLa función de escaneo inteligente requiere configuración adicional del servidor. Por favor, contacta al administrador del sistema para activar esta funcionalidad.\n\nMientras tanto, puedes registrar servicios manualmente desde la pantalla principal.';
+        } else if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('network')) {
+          userMessage = '🌐 Error de conexión\n\nNo se pudo conectar con el servidor de IA. Esto puede deberse a:\n\n• Conexión a internet inestable\n• El servidor no está disponible temporalmente\n• Configuración de red incorrecta\n\nPor favor, verifica tu conexión e intenta nuevamente.';
         } else if (error.message.includes('Timeout')) {
-          userMessage = 'La solicitud tardó demasiado. Por favor, intenta nuevamente.';
+          userMessage = '⏱️ Tiempo de espera agotado\n\nLa solicitud tardó demasiado en procesarse. Esto puede deberse a una imagen muy grande o una conexión lenta.\n\nSugerencias:\n• Usa una imagen más pequeña\n• Verifica tu conexión a internet\n• Intenta nuevamente';
         } else if (error.message.includes('JSON')) {
-          userMessage = 'Error al procesar la respuesta. La imagen podría no tener texto legible.';
+          userMessage = '📄 Error al procesar la imagen\n\nNo se pudo interpretar el contenido de la imagen. Asegúrate de que:\n\n• La imagen contenga texto legible\n• El documento esté completo y sin cortes\n• La foto tenga buena iluminación y enfoque';
         } else {
-          userMessage = `Error: ${error.message}`;
+          userMessage = `❌ Error: ${error.message}`;
         }
       }
       
