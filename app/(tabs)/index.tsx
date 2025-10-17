@@ -45,7 +45,7 @@ export default function HomeScreen() {
   const [discountPercent, setDiscountPercent] = useState('0');
   const [observations, setObservations] = useState('');
   const [serviceDate, setServiceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Tarjeta');
   const [clientName, setClientName] = useState('');
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
@@ -91,7 +91,7 @@ export default function HomeScreen() {
   const [editPrice, setEditPrice] = useState('');
   const [editDiscountPercent, setEditDiscountPercent] = useState('');
   const [editObservations, setEditObservations] = useState('');
-  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Efectivo');
+  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Tarjeta');
   const [editClientName, setEditClientName] = useState('');
   const [showEditPaymentPicker, setShowEditPaymentPicker] = useState(false);
   
@@ -211,7 +211,7 @@ export default function HomeScreen() {
       setDiscountPercent('0');
       setObservations('');
       setServiceDate(new Date().toISOString().split('T')[0]);
-      setPaymentMethod('Efectivo');
+      setPaymentMethod('Tarjeta');
       setClientName('');
       Alert.alert('Éxito', 'Servicio añadido correctamente');
     } catch (error) {
