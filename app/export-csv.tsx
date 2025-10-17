@@ -42,10 +42,10 @@ export default function ExportCSVScreen() {
           `"${service.origin}"`,
           `"${service.destination}"`,
           `"${service.company}"`,
-          parseFloat(price.toFixed(2)),
-          discountPercent,
-          parseFloat(discountAmount.toFixed(2)),
-          parseFloat(finalPrice.toFixed(2)),
+          price.toFixed(2),
+          parseFloat(service.discountPercent).toFixed(2),
+          discountAmount.toFixed(2),
+          finalPrice.toFixed(2),
           `"${service.observations.replace(/"/g, '""')}"`,
         ].join(',');
         
