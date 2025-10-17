@@ -489,15 +489,15 @@ export default function GenerateHTMLScreen() {
       </div>
       <div class="summary-item">
         <span class="summary-label">Ingresos Brutos:</span>
-        <span class="summary-value">${abonadoTotals.totalPrice.toFixed(2)}&nbsp;€</span>
+        <span class="summary-value">${Math.round(abonadoTotals.totalPrice * 100) / 100}&nbsp;€</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">Descuentos:</span>
-        <span class="summary-value discount">-${abonadoTotals.totalDiscount.toFixed(2)}&nbsp;€</span>
+        <span class="summary-value discount">-${Math.round(abonadoTotals.totalDiscount * 100) / 100}&nbsp;€</span>
       </div>
       <div class="summary-total">
         <span class="summary-label">Total Neto:</span>
-        <span class="summary-value">${abonadoTotals.totalFinal.toFixed(2)}&nbsp;€</span>
+        <span class="summary-value">${Math.round(abonadoTotals.totalFinal * 100) / 100}&nbsp;€</span>
       </div>
     </div>
     
